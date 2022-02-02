@@ -1,0 +1,150 @@
+---
+title: "Avaliação de Testes para Comparações Múltipla de Médias"
+subtitle: "CE089 - Estatística Computacional II - Estatística"
+author: "Caroline Martins Selis"
+date: "Dezembro 2017"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.align = "center")
+library(knitr)
+library(lattice)
+library(latticeExtra)
+library(gridExtra)
+library (agricolae)
+
+```
+
+# Procedimentos para comparações múltiplas de médias
+
+1. **Objetivo**
+
+    O objetivo desse trabalho foi avaliar testes de comparação múltiplas em relação a sua função poder de teste, os testes avaliados foram:
+
+    - Tukey; 
+    - Student-Newman-Keuls;
+    - Teste t (sem proteção);
+    - Teste t (com proteção de Bonferron);
+    - Teste t (com proteção pela taxa de falsa descobertas).
+
+
+2. **Metodologia**
+
+     Para realizar as avaliações dos testes foi simulado via Monte Carlo experimentos com diferentes cenários.
+    Foram 90 cenários diferentes, estes cenários são compostos por o número de tratamentos, números de repetições, e o tamanho da diferença da média entre os tratamentos.
+    Foram simuladas 1000 repetições de cada cenário.
+
+
+```{r message=FALSE, warning=FALSE, results="asis"}
+
+#Simula um modelo com trt tratamentos,rpt Repetições e o efeito das diferenças das médias (ef)
+
+mod<- function(trt = 3, rpt = 4, ef = 1) {
+  trat <- gl(trt, rpt) 
+  mu <- ef * (0:(trt - 1)/(trt - 1))
+  mu <- rep(mu, each = rpt)
+  y <- rnorm(length(mu), mean = mu, sd = 1) #Vetor com valores Normais de média mu e #desvio padrão = 1
+  m0 <- lm(y ~ trat) #Modelo
+  return(m0)
+}
+#Como default foi definido 3 tratamentos, 4 repetições cada tratamento e a diferença #entre as médias = 1
+mod()
+
+#A função test_mod vai usar o modelo definido anteriormente em "mod" 
+#e vai testar (com os 5 testes em questão)
+#se as médias são diferentes entre os tratamentos, e vai retornar a probabilidade de #se rejeitar a hipotese nula de cada teste.
+
+test_mod <- function(B = 1000, trt = 3, rpt = 4, ef = 1, test = "HSD") {
+  switch(test,
+         "HSD" = {
+           r <- replicate(B, {
+             m0 <- mod(trt, rpt, ef)
+             h <- HSD.test(m0, trt = "trat")
+             nlevels(h$groups$groups) > 1 #nlevels conta quantas diferenças #significativas ocorreram, se esse valor for maior que 1, ou seja, foi localizado um #par (ou mais) de médias que se diferenciam entre si, a hipótese nula será rejeitada. #Lembrando, a hipótese nula considera todas as médias dos tratamentos iguais.
+           })
+           mean(r)
+         },
+         "SNK" = {
+           r <- replicate(B, {
+             m0 <- mod(trt, rpt, ef)
+             h <- HSD.test(m0, trt = "trat")
+             nlevels(h$groups$groups) > 1
+           })
+           mean(r)
+         },
+         "LSD" = {
+           r <- replicate(B, {
+             m0 <- mod(trt, rpt, ef)
+             h <- HSD.test(m0, trt = "trat")
+             nlevels(h$groups$groups) > 1
+           })
+           mean(r)
+         },
+         "LSD-fdr" = {
+           r <- replicate(B, {
+             m0 <- mod(trt, rpt, ef)
+             h <- HSD.test(m0, trt = "trat")
+             nlevels(h$groups$groups) > 1
+           })
+           mean(r)
+         },
+         "LSD-bonferroni" = {
+           r <- replicate(B, {
+             m0 <- mod(trt, rpt, ef)
+             h <- HSD.test(m0, trt = "trat")
+             nlevels(h$groups$groups) > 1
+           })
+           mean(r)
+         })
+}
+
+#Comb faz a combinação dos diferentes cenários que serão rodadas as simulações
+#Exemplo: Um cenário seria um experimento com 3 tratamentos, e cada tratamento 
+#com 5 repetições e as médias variando em 0.3*
+#*O Y (vetor resposta) é gerado de uma normal com média=c(0,0.3,0.6)
+comb <- expand.grid(trt = c(3, 5),#trt varia em 3 e 5tratamentos
+                    rpt = c(5, 10,20),# Rpt varia em 5,10 e 20 repetições
+                    ef = seq(0, 1, by = 0.1),#os efeitos começam em 0 e vão até 1
+                    test = c("HSD",
+                             "SNK",
+                             "LSD",
+                             "LSD-fdr",
+                             "LSD-bonferroni"))
+
+kable(head(comb))
+
+# comb$rej vai simular todos os cenários possíveis e vai retornar a probabilidade de #rejeitar H0 em cada um dos casos
+comb$rej <- mapply(FUN = test_mod,
+                   B = 1000,
+                   trt = comb$trt,
+                   rpt = comb$rpt,
+                   ef = comb$ef,
+                   test = comb$test)
+```
+```{r message=FALSE, warning=FALSE, results="asis"}
+
+#Gráfico de poder de teste
+useOuterStrips(
+  xyplot(rej ~ ef | factor(trt) + factor(rpt),
+         groups = test,
+         data = comb,
+         auto.key = TRUE,
+         type = "o",
+         ylab = "Probabilidade de Rejeitar H0",
+         xlab = "Efeito")) +
+  layer(panel.abline(h = 0.05, lty = 2)) +
+  layer(panel.grid())
+
+
+```
+
+3. **Conclusão**
+
+    Percebe-se que quanto maior  número de repetições mais rápido sobe a curva de poder, ou seja se rejeita mais H0.
+    Todos os testes mostraram percentual de rejeição de H0 similares,c curvas poder quase que exatamente iguais. Mesmo assim, destaque mair para o teste LSD - fdr, que se mstrou levemente mais poderoso.
+    
+
+   

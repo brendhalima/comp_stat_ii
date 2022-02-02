@@ -1,0 +1,414 @@
+---
+fontsize: 12pt
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+   ----------------------------------------------------------
+
+\[\Huge{\textbf{Estudo do Comprimento Médio de }}\]
+\[\Huge{\textbf{Sequência em Delineamentos Amostrais }}\]
+\[\Huge{\textbf{via Simulação Monte Carlo}}\]
+
+   ----------------------------------------------------------
+
+\[\mathbf{CE089- \ Estatística \ Computacional \ II}\]
+\[\normalsize{\textbf{Prof. Dr. Walmes Marques Zeviani}}\]
+\[\mathbf{Bruno \ Geronymo, \ Vinicius \ César}\]
+
+   ----------------------------------------------------------
+
+
+# Introdução
+
+Este trabalho tem como objetivo avaliar o comprimento médio de sequência através dos delineamentos amostrais *Amostragem Aleatória Simples* e *Amostragem por Conjuntos Ordenados* considerando diferentes níveis de descontrole do processo, tamanhos amostrais e distribuições distintas.
+
+Para tanto, considerou-se:
+
+  * n = {3, 4, 5, 6}
+  * $\delta$ = {0, 0.1, 0.2, 0.3, 0.4, 0.8, 1.2, 1.6, 2, 2.4, 3.2}
+  * Distribuição = {Normal, T-Student, Uniforme}
+
+\n
+
+
+## Delineamentos Amostrais por Conjuntos Ordenados
+
+Em situações em que as unidades amostrais são de difícil acesso e/ou de alto custo para serem coletadas, mas é possível ordená-las, segundo a variável de interesse, sem de fato quantificá-la, seja por meio de julgamento pessoal ou por alguma variável concomitante, os delineamentos amostrais por conjuntos ordenados têm sido uma alternativa, pois apresentam alta eficiência e baixo custo (BARRETO, 2001). 
+
+Nesse contexto, delineamentos como a **Amostragem por Conjuntos Ordenados** (ACO - (MCINTYRE, 1952)), **Extreme Ranked Set Sampling** (ERSS- (SAMAWI; AHMED; ABU-DAYYEH, 1996)) e **Median Ranked Set Sampling** (MRSS- (MUTTLAK, 1997)) foram propostos, além do **Unified Ranked Set Sampling** (URSS- (ZAMANZADE; AL-OMARI, 2015)), como mais uma alternativa à ACO.
+
+A amostragem por Conjuntos Ordenados foi proposta por McIntyre (1952), que constatou ser um método mais eficiente que a AAS quando as unidades amostrais são de difícil acesso ou de cara mensuração, sendo possível ordenar as unidades amostrais por julgamento pessoal ou algum outro procedimento de baixo custo, sem mensurar a variável de interesse. Para ilustrar a seleção de uma amostra de tamanho *n* via ACO, considere a esquematização abaixo:
+
+
+
+```{r, echo = F, out.width = "80%", fig.align = 'center'}
+library(png)
+img <- "aco.png"
+library(knitr)
+include_graphics(img)
+```
+
+  Ao final do processo, a Amostra por Conjuntos Ordenados pode ser denotada por: 
+$$
+  Y[i]j ; i = 1, 2, . . . , k; \ j = 1, 2, . . . , n, \ 
+$$
+
+
+## Comprimento Médio de Sequência
+
+O Comprimento Médio de Sequência (CMS) representa o número médio de amostras antes que alguma delas produza um ponto que exceda os limites de controle. Neste estudo, a obtenção do CMS dá-se através da expressão:
+
+$$
+CMS = \frac{1}{p}, \ sendo \ p = \frac{Número \ de \ pontos \ fora \ dos \ limites \ de \ controle}{1.000.000}
+$$
+
+
+# Metodologia de Simulação
+
+Para a realização do estudo considerando as situações apresentadas, fez-se necessário em um primeiro momento, a realização de uma função/código que obtive-se as amostras selecionadas via *Ranked Set Sampling* de um conjunto de $n^2$ amostras selecionada através de *Simple Random Sampling*. Tal função é apresentada abaixo.
+
+```{r}
+##' @title Função para obtenção de m amostras de tamanho n via RSS considerando distribuições diversas. 
+##' @description Essa função permite obter m amostras de tamanho n via 
+##' RSS considerando qualquer distribuição.
+##' @param m: Número de amostras a serem simuladas.
+##' @param n: Tamanho das amostras a serem simuladas.
+##' @param dist: Distribuição para a simulação dos dados. 
+##' @param par: Parâmetros que a distribuição assume.
+##' @return Retorna uma matrix e tamanho m X n. 
+
+amost <- function(m, n, dist = 'rnorm', par = list(...)){
+#  set.seed(2)
+  k2 <- n^2
+  amostra_fim <- matrix(0, ncol = n,  nrow = m, 
+                        dimnames = list(c(1:m), c(1:n)))
+  
+  for(i in 1:m){
+    pop <- do.call(dist, c(n = k2, par))
+    matx <- matrix(pop, nrow = n)
+    mat_ord <- apply(matx, 2, sort)
+    amostra_fim[i,] <- diag(mat_ord)
+  }
+  return(amostra_fim)
+}
+
+amost(m = 4, n = 3, dist = rnorm, par = list(0, 1))
+```
+
+Para a avaliação do CMS, a delimitação dos limites inferior e superior de um gráfico de controle é fundamental. Na primeira situação, são apresentados os limites inferior e superior para a amostragem aleatória simples.
+
+
+$$
+LSC = \mu + 3\frac{\sigma}{\sqrt{n}}
+$$
+
+$$
+LC = \mu 
+$$
+
+$$
+LIC = \mu -3\frac{\sigma}{\sqrt{n}} 
+$$
+
+Para a amostragem por conjuntos ordenados, os limites ficam delimitados como segue:
+
+$$
+LSC = \mu + 3\sigma_{\bar{X}_{rss}} 
+$$
+
+$$
+Lc = \mu 
+$$
+
+$$
+LIC = \mu - 3\sigma_{\bar{X}_{rss}} 
+$$
+
+Entretando, torna-se necessário o cálculo da variância da média da amostra por conjuntos ordenados da seguinte maneira:
+
+$$
+\sigma_{\bar{X}_{rss}} = \sqrt{\frac{1}{mn} \sum_{j = 1}^{m}\sum_{i = 1}^{n} \frac{\sigma^{2}_{(i:n)}}{n}}
+$$
+Note que o cálculo dessa variância utiliza a variância da estatística de ordem. Diante disso, implementou-se computacionalmente os códigos para obtênção da estatística de ordem e procedeu-se com o demais cálculos.
+
+
+$$
+Var(Y(_{(i)n})) = \sigma^{2}_{i:n} = \int_{-\infty}^{\infty}y^2 f_{i:n}(y)dy - \left [   \int_{-\infty}^{\infty}y f_{i:n}(y)dy \right ]^{2}
+$$
+
+em que 
+
+$$
+f_{i:n}(y): \frac{n!}{(i-1)!(n-i)!}F(y)^{i-1}{(1-F(y))}^{n-1}f(y), - \infty < y < \infty
+$$
+
+
+
+
+
+```{r}
+## Função densidade de probabilidade da estatística de ordem multiplicada por 
+## 'x' para ser usada no cálculo da variância.
+## O parâmetro n indica o tamanho da amostra; x remete a variável a ser
+## integrada; i é a posição ordenada da amostra; 
+
+fdpx <- function(n, x, i){
+  (((x*factorial(n)) / (factorial(i - 1) * factorial(n - i))) * 
+     (pnorm(x)^(i - 1))*((1 - pnorm(x))^(n - i))*dnorm(x))
+}
+
+## Função densidade de probabilidade da estatística de ordem multiplicada por 
+## 'x^2' para ser usada no cálculo da variância.
+## O parâmetro n indica o tamanho da amostra; x remete a variável a ser
+## integrada; i é a posição ordenada da amostra;
+
+fdpx2 <- function(n, x, i){
+  ((((x^2)*factorial(n))/(factorial(i - 1)*factorial(n - i))) *
+     (pnorm(x)^(i - 1)) * ((1 - pnorm(x))^(n - i))*dnorm(x))
+}
+```
+
+Desta forma, o desvio padrão pode ser obtido da seguinte maneira:
+
+```{r}
+##' @title Função para obtenção do desvio padrão do estimador da média 
+##' populacional via Ranked Set Sampling.
+##' @description Essa função permite obter o desvio padr??o do estimador
+##' da média populacional considerando o delineamento RSS.
+##' @param RSS: Remete a amostra obtida via RSS.
+##' @return Retorna o desvio padrão do estimador da média populacional 
+##' para o delineamento Ranked Set Sampling.
+
+sd <- function(rss){
+  m <- length(rss[,1])
+  n <- length(rss[1,])
+  esp2 <- vector('numeric', length = n)
+  esp <- vector('numeric', length = n)
+  for(j in 1:n){
+    esp2[j] <- integrate(fdpx2,lower=-Inf,upper=+Inf, n = n,i = j)$value
+    esp[j] <- (integrate(fdpx,lower=-Inf,upper=+Inf, n = n,i = j)$value)^2
+  }
+  var_order <- (esp2 - esp)
+  var_rank <- (sum(var_order/n)*m) / (m*n)
+  sd <- sqrt(var_rank)
+  return(sd)
+}
+
+```
+
+
+Os níveis de descontrole do processo, considerando uma alteração na média para $$ \mu_{Y} = \mu_{0} + \frac{(\delta \sigma_{0})}{\sqrt{n}} $$ . Essa altração na média do processo é controlada por:
+$$
+\delta  = |\mu_Y - \mu_0| \frac{\sqrt{n}}{\sigma_0}
+$$
+
+Para $\delta$ = 0 tem-se o processo sob controle e, se algum ponto for detectado fora dos limites de controle, é considerado um falso alarme. Desse modo, quanto maior for o CMS para $\delta$ = 0, menor a taxa de falsos alarmes. Por outro lado, se $\delta \neq$ 0, o processo está fora de controle, e o CMS indicaria o número médio de amostras necessárias para a identificação da alteração na média do processo.
+
+
+Com todos os códigos delimitados, procedeu-se com a implementação de 1.000.000 de simulações de amostras com determinado tamanho amostral e descontrole do processo, bem como a distribuição.
+
+## Estudo via Simulação
+
+Para obter resultados mais precisos, realizou-se 1.000.000 de simulações considerando cada tamanho amostral, nível de descontrole do processo, distribuição assumida e delineamento amostral. Os limites inferior e superior foram fixados neste estudo. 
+
+Abaixo é apresentado a função utilizada para a realização do estudo sob Amostragem por Conjuntos Ordenados. 
+
+```{r}
+##' @title Função para obtenção do comprimento médio de sequência via 
+##' Ranked Set Sampling.
+##' @description Essa função permite obter o comprimento médio de 
+##" sequência considerando tamanhos amostrais e descontroles do processo.
+##' @param n: Tamanho amostral.
+##' @param delta: Parâmetro referente ao nível de descontrole do processo.
+##' @return Retorna o comprimento médio de sequência considerando diferentes tamanhos 
+##' amostrais e níveis de descontrole do processo para o delineamento Ranked Set Sampling.
+
+cmsfinal <- function(n, delta){
+  la <- length(n)
+  ls <- length(delta)
+  cms_matrix <- matrix(0, nrow = ls, ncol = la,
+                       dimnames=list(c(delta),c(n)))
+  
+  for(a in 1:la){
+    amostra <- amost(m = 1, n = n[a], dist = 'rnorm', par = list(0, 1))
+    sd <- sd(amostra)
+    
+    lsc <- 3*sd
+    lic <- -3*sd
+    print(lsc)
+    lk2 <- n[a]^2
+    for(i in 1:ls){
+      set.seed(i*809)
+      amostra2 <- amost(m = 1000000, n = n[a], dist = 'rnorm', 
+                   par = list(mean = delta[i]/sqrt(n[a]), sd = 1))
+      mrow <- cbind(amostra2, rowMeans(amostra2))
+      ncolu <- ncol(mrow)
+      
+      mrow <- cbind(mrow, mrow[,ncolu]<lic | mrow[,ncolu]>lsc)
+      p <- sum(mrow[,ncolu+1])/dim(mrow)[1]
+      cms_matrix[i,a] <- 1/p
+      print(cms_matrix)
+    }
+  }
+  return(cms_matrix)
+}
+n <- c(3, 4, 5, 6)
+delta <- c(0, 0.1, 0.2, 0.3, 0.4, 0.8, 1.2, 1.6, 2, 2.4, 3.2)
+#senhor <- cmsfinal(n, delta)
+```
+
+
+
+Para obtenção de amostras via amostragem aleatória simples, fez-se necessário a criação da função apresetnada a seguir:
+
+```{r}
+##' @title Função para obtenção de amostras do delineamento amostragem aleatória smples.
+##' @description Essa função permite obter amostras do delineamento amostragem aleatória smples.
+##' @param m: Número de amostras a serem simuladas.
+##' @param n: Tamanho das amostras a serem simuladas.
+##' @param dist: Distribuição para a simulação dos dados. 
+##' @param par: Parâmetros que a distribuição assume.
+##' @return Retorna uma amostra e tamanho m X n. 
+
+srs <- function(m, n, dist, par = list(...)){
+  amostra_fim <- matrix(0, ncol = n,  nrow = m)
+  for(i in 1:m){
+    pop <- do.call(dist, c(n = n, par))
+    amostra_fim[i,] <- pop
+  }
+  return(amostra_fim)
+}
+```
+
+Já para obtenção dos Comprimentos Médios de Sequência, fez-se o uso da seguinte função:
+
+
+```{r}
+##' @title Função para obtenção do comprimento médio de sequência via Amostragem Aleatória Simples.
+##' @description Essa função permite obter o comprimento médio de 
+##' sequência considerando tamanhos amostrais e descontroles do processo.
+##' @param n: Tamanho amostral.
+##' @param delta: Parâmetro referente ao nível de descontrole do processo.
+##' @return Retorna o comprimento médio de sequência considerando diferentes tamanhos 
+##' amostrais e níveis de descontrole do processo para o delineamento Ranked Set Sampling.
+
+cms <- function(n, delta){
+  la <- length(n)
+  ls <- length(delta)
+  cms_matrix <- matrix(0, nrow = ls, ncol = la,
+                       dimnames=list(c(delta),c(n)))
+  
+  
+  for(a in 1:la){
+    lsc <- + 3*(1/sqrt(n[a]))
+    lic <- - 3*(1/sqrt(n[a]))
+    for(i in 1:ls){
+      set.seed(i*78)
+      dados <- srs(m = 1000000, n = n[a], dist = 'rnorm', 
+                   par = list(mean = delta[i]/sqrt(n[a]), sd = 1))
+      
+      mrow <- cbind(dados, rowMeans(dados))
+      ncolu <- ncol(mrow)
+      
+      mrow <- cbind(mrow, mrow[,ncolu]<lic | mrow[,ncolu]>lsc)
+      p <- sum(mrow[,ncolu+1])/dim(mrow)[1]
+      print(p)
+      cms_matrix[i,a] <- 1/p
+      print(cms_matrix)
+    }
+  }
+  return(cms_matrix)
+}
+```
+
+ ----------------------------------
+
+
+# Resultados
+
+A seguir são apresentados os resultados obtidos via simulação Monte Carlo, considerando diferentes combinações das variáveis consideradas. 
+
+
+```{r, echo =F}
+## Os dados estão sendo inseridos manualmente devido ao fato de termos
+## rodado os códigos em 3 computadores por causa do número muito grande
+## de simulações.
+##
+## Ao rodar os códigos, você chegará nos mesmos resultados.
+
+
+library(knitr)
+library(kableExtra)
+
+dados <- data.frame(delta = c(0, 0.1, 0.2, 0.3, 0.4, 0.8, 1.2, 1.6, 2, 2.4, 3.2), 
+                    SRS= c(368.45, 352.85, 309.11, 253.93, 199.08, 72.81, 27.71, 12.38, 6.32, 3.64, 1.72),
+                    RSS = c(347.10, 322.26, 249.68, 177.43, 132.90, 34.04	, 11.14, 4.65, 2.45, 1.59, 1.08),
+                    SRS= c(369.27, 353.98, 315.15, 252.14, 200.72, 71.69, 27.91, 12.28, 6.29, 3.64	, 1.72),
+                    RSS = c(339.55, 301.84, 238.15, 165.75, 110.25, 26.30, 8.15, 3.43, 1.90, 1.33, 1.02),
+                    SRS= c(365.36, 338.40, 311.33, 250.62, 197.43, 71.59	, 27.82, 12.35	, 6.31, 3.63, 1.72),
+                    RSS = c(339.67, 308.16, 229.20, 150.85	, 99.20	, 20.94, 6.30, 2.71, 1.58, 1.18, 1.01),
+                    SRS= c(368.05, 339.09, 105.43	, 261.50, 199.72, 71.87, 27.94, 12.34, 6.33, 3.63, 1.72),
+                    RSS = c(351.74, 292.91, 208.37, 137.77, 87.69, 17.33	, 5.12, 2.26, 1.39	, 1.11, 1.00))
+                    
+colnames(dados) <- c('delta', rep(c('SRS', 'RSS'), 4))
+kable(dados, "html",  caption = "Tabela 1: Comprimento Médio de Sequência sob Distribuição Normal") %>%
+  kable_styling("striped") %>%
+  add_header_above(c(" " = 1, "n = 3" = 2, "n = 4" = 2, "n = 5" = 2, "n = 6" =2))
+```
+
+
+```{r, echo = F}
+dados <- data.frame(delta = c(0, 0.1, 0.2, 0.3, 0.4, 0.8, 1.2, 1.6, 2, 2.4, 3.2), 
+                    SRS= c(272.85, 261.16, 232.34, 195.12, 157.50, 59.73, 24.11, 11.13, 5.82, 3.44, 1.69),
+                    RSS = c(255.16,235.34, 190.80, 143.78, 106.99, 29.45, 10.04, 4.35, 2.35, 1.56, 1.07),
+                    SRS= c(281.61, 270.19, 245.76, 199.56, 156.12, 60.03, 24.18, 11.07, 5.79, 3.43, 1.69),
+                    RSS = c(257.73, 232.50, 182.51, 129.06, 92.70, 22.59, 7.45, 3.26, 1.84, 1.31, 1.02),
+                    SRS= c(296.38, 276.49, 245.15, 200.84, 160.43, 60.19, 24.28, 11.19, 5.82, 3.44, 1.69),
+                    RSS = c(262.60, 228.46, 176.36, 120.56, 82.05, 18.48, 5.84, 2.60, 1.55, 1.17, 1.00),
+                    SRS= c(290.19, 274.42, 245.09, 206.22, 162.57, 61.62, 24.61, 11.18, 5.81, 3.44, 1.69),
+                    RSS = c(267.16, 236.12, 167.00, 110.32, 71.70, 15.27, 4.76, 2.17, 1.37, 1.10, 1.00))
+                    
+colnames(dados) <- c('delta', rep(c('SRS', 'RSS'), 4))
+kable(dados, "html", caption = "Tabela 2: Comprimento Médio de Sequência sob Distribuição T de Student") %>%
+  kable_styling("striped") %>%
+  add_header_above(c(" " = 1, "n = 3" = 2, "n = 4" = 2, "n = 5" = 2, "n = 6" =2))
+```
+
+
+```{r, echo = F}
+dados <- data.frame(delta = c(0, 0.1, 0.2, 0.3, 0.4, 0.8, 1.2, 1.6, 2, 2.4, 3.2), 
+                    SRS = c("Inf", 71428.57, 6134.96, 1811.59, 743.49, 95.06, 27.66, 11.70, 6.00, 3.51, 1.73),
+                    RSS = c(797.44, 677.50, 453.72, 283.44, 180.31, 37.59, 11.63, 4.70, 2.45, 1.59, 1.07),
+                    SRS= c(2222.22, 1811.59, 1077.58, 656.16, 386.99, 84.50, 28.01, 11.89, 6.05, 3.54, 1.73),
+                    RSS = c(626.17, 536.48, 378.21, 240.50, 150.55, 29.74, 8.58, 3.48, 1.90, 1.32, 1.02),
+                    SRS= c(1028.80, 913.24, 706.21, 467.28, 316.45, 82.41, 28.02, 11.98, 6.11, 3.56, 1.73),
+                    RSS = c(626.95, 541.41, 354.73, 222.41, 136.25, 24.11, 6.68, 2.75, 1.58, 1.17, 1.00),
+                    SRS = c(753.01, 703.23, 585.48, 399.20, 300.75, 79.61, 27.84, 12.04, 6.13, 3.58, 1.73),
+                    RSS = c(651.46, 515.46, 354.98, 203.08, 123.80, 20.03, 5.39, 2.26, 1.38, 1.09, 1.00))
+                    
+colnames(dados) <- c('delta', rep(c('SRS', 'RSS'), 4))
+kable(dados, "html", caption = "Tabela 3: Comprimento Médio de Sequência sob Distribuição Uniforme") %>%
+  kable_styling("striped") %>%
+  add_header_above(c(" " = 1, "n = 3" = 2, "n = 4" = 2, "n = 5" = 2, "n = 6" =2))
+```
+
+
+
+
+
+
+# Considerações finais
+
+Diante dos resultados obtidos nota-se que em ambos os delineamentos amostrais, a medida que o descontrole do processo aumenta, menor é a quantidade de amostras necessárias para a ocorrência de uma sinalização de descontrole (independente do tamanho amostral e da distribuição dos dados).
+
+Ainda, é nítido que o número de amostras necessárias para a sinalização de um descontrole considerando que tais amostras são oriundas de uma distribuição t de student é menor se comparado a amostras da distribuição normal. Há momentos em que os CMS's aumentam ou diminuem se comparados os tamanhos amostrais. Isso em ambos os delineamentos.
+
+Outro aspecto é que os CMS's do delineamento Amostragem por Conjuntos Ordenados são menores se comparados aos da Amostragem Aleatória Simples, indicando que será necessário um número menor de amostras para a sinalização do descontrole. 

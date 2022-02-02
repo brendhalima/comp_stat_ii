@@ -1,0 +1,222 @@
+---
+title: "Curva de poder de testes para a hipótese de igualdade de variância"
+author: "Alexandre Diaz (GRR20137526)
+
+        \
+
+        Vinicius Souza (GRR20149129)"
+date: "22 de novembro de 2017"
+output: html_document
+---
+## Resumo e Revisão de Literatura:
+
+Esse trabalho consiste em comparar $\sigma^2_1$ e $\sigma^2_2$ de duas populações independentes, com 3 testes de comparação entre duas variâncias. Com isso vamos avaliar o poder dos 3 testes, que compara variâncias populacionais. Para isso usaremos duas populações, uma população com a variância fixa, e a outra não-fixa, para comparar essas duas populações com variâncias diferentes. Com os seguintes testes:
+
+\
+
+**Tete F para comparação de duas variâncias:**
+Executa um teste F para comparar as variâncias de duas amostras de populações normais.
+
+\
+
+**Mood Two-Sample Test of Scale:** 
+Executa o teste de duas amostras da Mood para uma diferença nos parâmetros da escala. Com a média das duas populações comparadas tendo que ser iguais.
+
+\
+
+**Ansari-Bradley Test:** 
+Executa o teste de duas amostras de Ansari-Bradley para uma diferença nos parâmetros da escala. 
+
+\
+
+Os três testes podem ser usados para comparar duas variâncias.
+Para rodar eles usaremos as funções, **var.test**, **mood.test** e **ansari.test**. As três funções necessitam de dois vetores, nomeados de *x*  e *y* para poder comparar as populações.
+
+**Hipóteses Testadas**
+
+Bilateral:
+$$
+\left\{\begin{matrix}
+Ho: \sigma^2_1=\sigma^2_2 & \\ 
+Ha: \sigma^2_1\neq \sigma^2_2 & 
+\end{matrix}\right.$$
+
+Unilateral:
+$$
+\left\{\begin{matrix}
+Ho: \sigma^2_1=\sigma^2_2 & \\ 
+Ha: \sigma^2_1> \sigma^2_2 & 
+\end{matrix}\right.
+\left\{\begin{matrix}
+Ho: \sigma^2_1=\sigma^2_2 & \\ 
+Ha: \sigma^2_1< \sigma^2_2 & 
+\end{matrix}\right.$$
+
+H0: Não existem evidências significativa de diferença entre as variâncias.
+Ha: Existe evidência significativa de diferença entre as variâncias. Ou uma variância é maior que a outra.
+
+Lembramos tambem que será observado o comportamento com diferentes tamanhos de amostras e 3 diferentes distribuições, a Normal, a Uniforme e a Poisson.
+ 
+**Normal:** conhecida também como distribuição gaussiana, é a mais importante das distribuições contínuas. É uma distribuição parametrizada pela sua esperança ($\mu$) e desvio padrão ($\sigma$), logo X~N($\mu,\sigma^2$). Com a função densidade de probabilidade:
+
+
+
+$$ f(x)=\frac{1}{\sqrt{2\pi\sigma^2}}exp^{\left [ -\frac{1}{2}\left ( \frac{x-\mu}{\sigma} \right )^2 \right ]}, x\epsilon(-\infty ,\infty )$$
+ 
+**Uniforme:** É a distribuição de probabilidades contínua mais simples de conceituar. É usada quando assumimos que as variáveis tem a mesma probabilidade de ocorrer. Seus parâmetros são a e b, e X~U(a,b) com a<b. Com a seguinte função densidade de probabilidade:
+
+$$\left\{\begin{matrix}
+\frac{1}{b-a}, &se \ a\leq x\leq b \\ 
+0, & caso\ contrario 
+\end{matrix}\right.$$
+
+**Poisson:** É uma distribuição de probabilidade com variável discreta que expressa a probabilidade de uma série de eventos ocorrer num certo período de tempo. A distribuição poisson tem parâmetro $\lambda$, com $\lambda>0$. Com a seguinte função de probabilidade:
+
+$$P(X=x)=\frac{e^{-\lambda}\lambda^x}{x!}$$
+
+Reforçando que nosso objetivo é avaliar o poder dos três testes citados para diferentes tamanhos de amostras, para 3 distribuições e com a primeira população com a variância fixada em 1, a segunda população tendo sua variância indo de 1 até 3. Ou seja, vamos fazer todas as possíveis combinações e avaliar seus respecitivos p-valores para tomar a decisão se rejeita ou não H0, com um nível de confiança de 95% ($\alpha=0.05$).
+  
+Vamos usar Monte Carlo, para replicar cada uma das combinações 5.000 vezes, e retornaremos a taxa de rejeição para cada combinação em relação aos 5.000 eventos ocorridos em cada combinação testada.
+
+## Material e métodos:
+
+Primeiramente vamos montar o nosso processo de simulação de **Monte Carlo** da seguinte maneira:
+
+```{r}
+simula0 <- function(n, sigma2b, dist, test) {
+  pval <- replicate(5000, {                         # quantidade de vezes que irá repetir cada combinação (5.000)
+    xy <- switch(dist,                              # criando números aleatórios das
+                 norm = {                           # das distribuições escolhidas 
+                   x <- rnorm(n, 0, 1)              # (normal,uniforme e poisson)    
+                   y <- rnorm(n, 0, sqrt(sigma2b))  # precisou parametrizar a variância
+                   list(x = x, y = y)
+                 },
+                 unif = {
+                   x <- runif(n, min= -(sqrt(12 * 1) / 2), # parametrizando a e b
+                              max = sqrt(12 * 1) / 2)
+                   y <- runif(n,min= -(sqrt(12 * sigma2b) / 2),
+                              max = sqrt(12 * sigma2b) / 2)
+                   list(x = x, y = y)
+                 },
+                 pois = {
+                   x <- rpois(n, 10) - 10
+                   y <- rpois(n, 10*sigma2b) - 10 * sigma2b # como o teste de mood exige médias iguais, tivemos que aplicar essa parametrização
+                   list(x = x, y = y)
+                 })
+    do.call(what = test, args = xy)$p.value                # entrando com os testes 
+  })
+  pval<- na.omit(pval)
+  sum(pval < 0.05)/length(pval) 
+}
+```
+
+**Exemplos:**
+
+Amostra tamanho 10
+
+variância = 1 
+
+var.test
+
+e as 3 distribuições
+```{r}
+simula0(10,1,"norm","var.test") # percentual de rejeição para a normal
+simula0(10,1,"unif","var.test") # percentual de rejeição para a uniforme
+simula0(10,1,"pois","var.test") # percentual de rejeição para a poisson.
+```
+
+Simulando somente três combinações com diferentes distribuições apenas, vemos que os três testes estão sendo conservadores, com nenhum passando de 5%, ou seja, para as três distribuições e as duas populações, o Teste F com tamanho de amostra 10 e variância 1 está rejeitando menos de 5%  a hipótese de que não existe diferença significativa entre as duas variâncias (H0).
+
+
+**Tabela de todas as possíveis combinações**
+```{r}
+
+exper<- expand.grid(dist= c("norm", "unif", "pois"),
+                    test= c("var.test","mood.test", "ansari.test"),
+                    n= c(10,15,30,60,70),
+                    sigma2b= c(1,1.2,1.4,1.6,1.8,2,2.2,2.4,2.6,2.7,2.8,3),
+                    KEEP.OUT.ATTRS = FALSE,
+                    stringsAsFactors = FALSE)
+
+head(exper)
+str(exper)
+```
+
+Foram geradas 540 combinações entre os tipos de teste, distribuição, tamanho de amostra e variância.
+
+
+**Calculando o percentual de rejeição de todas as possíveis combinações**
+
+```{r,warning=FALSE}
+rej<- mapply(FUN = simula0,
+           dist = exper$dist,
+           test = exper$test,
+           n = exper$n,
+           sigma2b = exper$sigma2b)
+## summary(rej)
+dados<- data.frame(exper,rej)
+
+```
+
+
+## Resultados
+
+```{r,message=FALSE}
+head(dados,20) # 20 primeiras linhas
+
+library(latticeExtra)
+
+useOuterStrips(
+  xyplot(rej ~ sigma2b | factor(n) + dist,
+         groups = test,
+         data = dados,
+         type = "o",
+         auto.key = TRUE,
+         xlab= "Variância",
+         ylab= "% de rejeição"))
+
+```
+
+## Conclusões
+
+Para a distribuição Uniforme aparentemente o teste Mood tem maior poder para detectar a diferença de variância de duas amostras, independente do tamanho da amostra.
+
+\
+
+Para a distribuição Normal e Poisson, vemos que o test F  (var.test) tem maior poder para detectar a diferença de variância de duas amostras, independente do tamanho da amostra.
+
+## Referências
+
+Teste para comparação de duas variâncias. Disponível em :
+
+http://www.portalaction.com.br/inferencia/56-teste-para-comparacao-de-duas-variancias-teste-f
+
+\
+
+Distribuição Normal. Disponível em:
+
+http://www.portalaction.com.br/probabilidades/62-distribuicao-normal
+
+https://pt.wikipedia.org/wiki/Distribui%C3%A7%C3%A3o_normal
+
+\
+
+Distribuição Uniforme. Disponível em:
+
+http://www.portalaction.com.br/probabilidades/61-distribuicao-uniforme
+
+https://pt.wikipedia.org/wiki/Distribuição_uniforme
+
+\
+
+Distribuição Poisson. Disponível em:
+
+http://www.portalaction.com.br/probabilidades/52-distribuicao-de-poisson
+
+https://pt.wikipedia.org/wiki/Distribui%C3%A7%C3%A3o_de_Poisson
+
+\
+
+Professor Doutor Walmes Marques Zeviani. Disponível em:
+
+https://gitlab.c3sl.ufpr.br/walmes

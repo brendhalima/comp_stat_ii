@@ -1,0 +1,186 @@
+---
+title: "Testes de Homocedasticidade para k populações"
+subtitle: "Estatística Computacional II"
+author: Konstanz Tonegawa Winter, Nathan Machado
+date: "Novembro, 2017"
+output: html_document
+---
+## Aspectos Motivacionais
+
+Homocedasticidade é o termo para designar variância constante em observações distintas. Em casos de heterocedasticidade podemos concluir que a inferência estatística não será válida e não podemos afirmar que os EQM são os melhores estimadores de mínima variância.
+
+Para testar a homocedasticidade, testamos a hipótese de igualdade de variância:
+
+
+$$H_0 : \sigma_1^2 = \sigma_2^2 = ... = \sigma_n^2$$
+$$H_1 : pelo\  menos\  um\  dos\ \sigma_i^{2's} diferente,~~i=1,...,n$$
+Dado um modelo de regressão linear:
+$$y_i=\beta_0+\beta_1x_{1,i}+...+\beta_px_{p,i}+\varepsilon_i,~~i=1,...,n$$
+
+Utilizamos alguns testes em k amostras sob $H_0$ (variâncias iguais):
+
+Bartlett: É utilizado quando a hipótese de normalidade não for violada, pois é sensível  devido às saídas da normalidade e pode retornar falsos positivos. 
+A estatística de teste é dada por:
+$$B_0=q/c$$
+em que
+$$q=(N-k)*ln s^2_p-\sum_{i=1}^{k}[(n_i-1)*ln s^2_i]$$
+$$c=1+\frac{1}{3(k-1)}\left(\sum_{i=1}^{k}\frac{1}{n_i-1}-\frac{1}{N-k}\right)$$
+$$s^2_p=\frac{1}{N-k}\sum_{i=1}^{k}(n_i-1) s^2_i$$
+$$s^2_i=\sum_{j=1}^{n_i}\frac{(y_{ij}-\bar{y}_i.)^2}{n_i-1}$$
+$$P-valor = P[\chi^2_{k-1}>B_0|H_0]$$
+A estatística do teste é aproximadamente qui-quadrado.
+
+Levene: É um teste não paramétrico utilizado pelo poder de robustez, ou seja, sua capacidade de não detectar falsamente variações desiguais quando os dados não são normalmente distribuídos e as variâncias são constantes. 
+Neste teste o procedimento consiste em transformar dos dados originais e aplicar aos dados transformados o teste da ANOVA. Levene (1960) propôs a seguinte transformação: (Portal Action)
+
+$$z_{ij}=|x_{ij}-\bar{x}_i|,~~i=1,...k~~e~~j=1,...,n_i$$
+onde
+$z_{ij}:representa~~os~~dados~~após~~transformação$
+$x_{ij}:representa~~os~~dados~~originais$
+$\bar{x}_i:representa~~a~~média~~do~~nível~~i,~~para~~os~~dados~~originais$
+
+e com isso a estatística do teste:
+
+$$F^*=\frac{\frac{\sum_{i=1}^{k}\frac{n_i(\bar{z_i}-\bar{z}..)^2}{k-1}}{\sum_{i=1}^{k}\sum_{j=1}^{n_i}(z_{ij}-\bar{z_i})^2}}{\sum_{i=1}^{k}(n_i-1)}$$
+
+Fligner: É este não paramétrico e também é robusto para saídas de normalidade. Ele difere do teste Levene por utilizar a centralização mediana em cada uma das amostras.
+
+Este teste é feito como Levene, substituindo a média do nível pela mediana. 
+
+$$z_{ij}=|x_{ij}-\hat{x}_i|,~~i=1,...k~~e~~j=1,...,n_i$$
+$\hat{x}_i:representa~~a~~média~~do~~nível~~i,~~para~~os~~dados~~originais$
+
+## Descrição do estudo de simulação
+No presente trabalho desenvolvemos uma simulação para testes de homocedasticidade para k populações, considerando os fatores:
+```{r,echo=FALSE, result='asis', warning=FALSE}
+library(knitr)
+mat <- matrix(c("n","k","phi","dist", "Tamanho da amostra", "Número de populações", "Grau falta de homoc.", "Dist. das respostas", 10, 2, "var", "Norm", 40, 5, "var", "Unif", 50, 8,"var", "Pois"),  nrow=4, ncol=5)
+colnames(mat) <- c("Fatores", " ", " ", " ", " ")
+kable(mat)
+```
+
+Com a finalidade de comparar o poder dos três testes e situações distintas.
+
+## Implementação em código R com comentários
+```{r, eval=FALSE,results='hide', eval = FALSE}
+library(car)
+require(reshape2)
+#set.seed(1234)
+
+# Criar a função que irá realizar as simulações
+
+simulaPop <- function(n, pop, phi, dist, teste){
+  
+  # Simulação de 3000 repetições
+  sum({replicate(3000,{popCont <- 1
+  Dados <- list()
+  
+  # Laço para gerar k populações com n amostras
+  while(popCont <= pop){
+    Dados[popCont] <- data.frame(matrix(switch(dist, 
+                               Norm = {rnorm(n, sd = sqrt(((phi*popCont)+1)))},
+                               Unif = {runif(n, min = -(sqrt(12 * ((phi*popCont)+1)) / 2),                                               max = sqrt(12 * ((phi*popCont)+1)) / 2)},
+                               Pois = {rpois(n, (phi*popCont)+1)})))
+    popCont <- popCont + 1}
+  
+  df <- data.frame(matrix(unlist(Dados),ncol=1))
+  
+  indicePop <- list()
+  
+# Cria uma lista com os nomes das populações
+for (i in 1:pop){
+  nms <- rep(paste("Pop",i),n)
+  indicePop <- append(indicePop,nms)
+}
+  
+indicePop <- unlist(indicePop)
+df[2] <- indicePop
+names(df) <- c("Observações", "População")  
+  
+# Calcula o p-valor com base no teste especificado
+Pvalor <- switch(teste,
+                   Bartlet = {bartlett.test(df$Observações ~ df$População)$p.value},
+                   Fligner = {fligner.test(df$Observações, factor(df$População))$p.value},
+                   Levene = {leveneTest(df$Observações, factor(df$População))$'Pr(>F)'[1]})
+  Pvalor})}<0.05)/3000
+}
+set.seed(1234)
+
+# Tabela com todas as combinações dos parâmetros da função
+Parametros <- expand.grid(n = c(10,40,80),
+                          pop = c(2,5,8),
+                          phi = seq(from = 0, to = 1, by = 0.1),
+                          dist = c("Norm","Unif","Pois"),
+                          teste = c("Bartlet","Fligner","Levene"))
+
+# Executa a função para cada combinação de parâmetros
+x <- mapply(FUN = simulaPop,
+            n = Parametros$n,
+            pop = Parametros$pop,
+            phi = Parametros$phi,
+            dist = as.character(Parametros$dist),
+            test = as.character(Parametros$teste))
+
+d <- data.frame(Parametros,x)
+
+library(ggplot2)
+library(latex2exp)
+
+dists <- c("Norm","Pois","Unif")
+
+
+
+
+```
+## Principais resultados em formato de gráficos ou tabelas com a discussão
+
+```{r,echo=TRUE, result='hide', warning=FALSE, eval=FALSE}
+# Gera gráficos comparativos dos testes para diferentes amostras, populações, etc
+p <- lapply(dists, function(x){
+  ggplot(d[d$dist == x,], aes(x = phi, y = x, colour = teste)) + 
+    geom_point() + geom_line(stat = "identity") + 
+    facet_wrap(~ pop + n,scales = "free") + 
+    scale_x_continuous(breaks= seq(0, 1, by = 0.1)) + 
+    labs(x = TeX("$\\phi$"), y = "y") + 
+    ggtitle(x) + 
+    scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"), 
+                       name="Testes",
+                       breaks=c("Bartlet", "Fligner", "Levene"),
+                       labels=c("Bartlet", "Fligner", "Levene"))
+})
+
+# p é uma lista que contêm os plots na sequencia do objeto dists
+
+p[[1]] # Norm
+
+p[[2]] # Pois
+
+p[[3]] # Unif
+
+
+```
+
+```{r,echo=FALSE}
+knitr::include_graphics("normal.png")
+knitr::include_graphics("uniforme.png")
+knitr::include_graphics("poisson.png")
+```
+
+
+## Recomendações e conclusões do trabalho
+
+É recomendado que quando os dados forem normais utilize-se do teste Bartlett devido sua sensibilidade a hipótese de normalidade dos dados, se rejeitarmos a hipótese de normalidade o recomentado é utilizar o teste Levene, sendo um teste mais robusto. E pelas simulações observamos que quando os dados não atendem a normalidade o teste de fligner é melhor que o levene.
+
+Segundo o TCL (teorema central do limite), observamos nos testes que com o aumento da população conseguimos aproximar qualquer distribuição para a normal, com isso o poder de teste entre os testes se aproxima.
+
+Observamos no gráfico de poisson que mesmo o teste bartlett rejeitando mais, ele é um teste liberal, pois quando há um aumento de amostra e população a taxa de rejeição é de aproximadamente 25% e o ideal seria 5%.
+
+Para planejamentos, verificamos a análise de variância porque ele decompõe a total em variância dentro dos grupos (o "erro") e a variação entre o grupo significa. Por isso, testa se os meios do grupo são iguais, comparando a variância entre eles e o esperado com base apenas na variância dentro do grupo: a variação entre os significados do grupo é "maior do que o esperado por acaso", ou seja, puramente da variabilidade da amostragem.
+Isso é totalmente diferente do teste de Levene ou outros, que testam se as variações dos grupos são iguais. Heuristicamente, os testes de Levene e Brown-Forsythe (eu não tenho certeza sobre Fligner, desculpe, Mike) são como ANOVA nos quadrados ou valores absolutos dos resíduos dentro do grupo, então eles testaram, por sua vez, se a magnitude média dos resíduos - - assim a variabilidade dentro do grupo - difere entre os grupos.
+
+
+
+## Referências
+http://www.portalaction.com.br/anova/161-teste-de-igualdade-das-variancias
+
+https://mixedpsychophysics.wordpress.com/r-code-a-test/changing-the-parameters-in-a-plot/

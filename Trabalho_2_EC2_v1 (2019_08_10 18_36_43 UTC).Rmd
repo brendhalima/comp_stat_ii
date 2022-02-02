@@ -1,0 +1,1677 @@
+---
+documentclass: article
+fontsize: 11pt
+geometry: margin=1in
+header-includes:
+- \usepackage{indentfirst}
+- \usepackage{ragged2e}
+- \setlength\JustifyingParindent{15pt}
+lang: pt-br
+output:
+  html_document:
+    df_print: paged
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+self_contained: no
+---
+
+\centering
+
+\pagenumbering{gobble}
+
+\large 
+
+UNIVERSIDADE FEDERAL DO PARANÁ
+
+\vspace{1cm}
+
+
+
+Bruno Henrique Abreu -- GRR20159983
+
+Hermann Delgado Mogiz -- GRR20159211
+
+
+
+\vspace{5cm}
+
+**Trabalho de Estatística Computacional 2**
+
+\vfill
+
+CURITIBA
+
+`r paste0(toupper(substring(format(Sys.Date(), "%B de %Y"), 1, 1)), tolower(substring(format(Sys.Date(), "%B de %Y"), 2)))`
+
+\clearpage
+
+\normalsize
+
+# Resumo
+
+\justifying
+
+Trabalho da disciplina de Estatística Computacional II do curso de Estatística da Universidade Federal do Paraná sobre curva de poder de testes para a hipótese, utilizando simulação de Monte Carlo. 
+Este trabalho tem por objetivo realizar curvas de poder de teste para a hipótese de normalidade de uma distribuição.
+Será realizado uma curva de poder para os testes de Shapiro Wilk, Kolmogorov Smirnov, Anderson Darling e Jarque-Bera e a avaliação de rejeição da hipotese nula (a amostra provém de uma distribuição normal), considerando os fatores: tamanho da amostra e distribuição de probabilidade da variável resposta.
+
+\centering
+
+**Palavras-chave**: Monte Carlo, Shapiro Wilk, Kolmogorov Smirnov, Anderson Darling, Jarque-Bera
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\pagenumbering{arabic}
+\setcounter{page}{3}
+
+\justifying
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warnings = FALSE, message = FALSE)
+options(OutDec = ",", digits = 3, scipen=999, knitr.kable.NA = '-')
+```
+
+## Aspectos motivacionais
+
+O trabalho consiste em curvas de poder de teste para hipóteses de normalidade de uma distribuição.
+Para isso, vamos utilizar os testes de Shapiro Wilk, Kolmogorov Smirnov, Anderson Darling e Jarque Bera.
+Para avaliar a rejeição da hipótese nula, considerando os fatores:
+
+**a** - tamanho da amostra
+
+**b** - distribuição de probabilidade da variável resposta.
+
+As distribuições utilizadadas foram a gama e a t de student.
+Para a convergência dessas distribuições para uma normal, utilizamos os graus de liberdade igual a 20, para a t de student
+e o parâmentro $\alpha$ da distribuição gama, com valor muito alto (500).
+
+As curvas serão construídas, calculando a rejeição da hipotese nula, com nível de significância igual a 5 % alterando os valores dos graus de liberadade (t de student) e de $\alpha$ (gama), de uma convergência para uma normal, até uma não normal.
+Desse modo, será possível verificar a tacas de rejeição ao longo da escala de alteração dos parâmetros.
+
+## Testes de Normalidade
+
+As curvas de poder serão construídas com base nos seguintes testes:
+
+<br/>
+
+**Shapiro Wilk**
+
+O teste é baseado na estatística W dado por:
+
+$$
+ \boldsymbol{W}=\frac{b^2}{\sum_{i=1}^{n}(x_i - \overline{x})^2}
+$$
+Onde $x_i$ são os valores da amostra ordenados ($x_1$ é o menor).
+A constante $b$ é determinada da seguinte forma:
+
+$$
+    b =
+  \begin{cases}
+  \sum_{i =1}^{n/2} \quad a_n-i+ 1 \quad \times (x_(n-i+1)-x_i) &,  se \quad n \quad é \quad par\\
+  \sum_{i =1}^{(n+1)/2} \quad a_n-i+ 1 \quad \times (x_(n-i+1)-x_i) &,  se \quad n \quad é \quad ímpar\\
+  \end{cases}
+$$
+Em que $a_n-i+1$ são constantes geradas por médias, variâncias e covariâncias de ordem de uma amostra n de uma distribuição normal.
+
+
+
+Realização do teste:
+
+
+
+*1.Formulação das hipóteses:*
+
+$$
+\begin{cases}
+  H_0: A\quad amostra \quad provém \quad de \quad uma \quad distribuição \quad normal, &\\
+  H_1: A\quad amostra \quad não \quad provém \quad de \quad uma \quad distribuição \quad normal &\\
+  \end{cases}
+$$
+
+*2. Nível de significância:*
+
+Estabelecer um nível de significância ($\alpha$),
+
+*3. Calcular a estatística de teste:*
+
+Ordenar as observações da amostra $x_1$,$x_2$, ... , $x_n$,
+
+Calcular $\sum_{i-1}^{n}(x_i - \overline{x})^2$
+
+Calcular $b$
+
+Calcular $\boldsymbol{W}$
+
+*4. Resultado do teste:*
+
+Rejeitar a hipótese nula ao nível de significância $\alpha$ se $\boldsymbol{W_c}$ < $\boldsymbol{W_t}$
+
+
+<br/>
+
+
+**Kolmogorov - Smirnov**
+
+Este teste observa a máxima diferença absoluta entre a função de distribuição acumulada assumida para os dados, no caso a Normal, e a função de distribuição empírica dos dados. Como critério, comparamos esta diferença com um valor crítico, para um dado nível de significância.
+
+Para realizar o teste, retira-se uma amostra aleatória simples $x_1$,$x_2$, ... , $x_n$, de uma população com função de distribuição acumulada contínua $F_x$ desconhecida.
+
+A estatística utilizada para o teste é:
+
+$$
+\boldsymbol{D} = sup_x|F(x) \quad - \quad F_n(x)|
+$$
+
+A função corresponde a distância máxima vertical entre os gráficos $F(x)$ e $F_n(x)$ sobre a amplitude dos possíveis valores de x.
+
+Em $\boldsymbol{D}$ temos:
+
+$F(x)$: representa a função de distribuição acumulada assumida para os dados;
+
+$F_n(x)$: representa a função de distribuição acumulada empírica dos dados;
+
+Realização do teste:
+
+*1.Formulação das hipóteses:*
+
+$$
+\begin{cases}
+  H_0: Os\quad dados \quad seguem \quad uma \quad distribuição \quad normal, &\\
+  H_1: Os\quad dados \quad não \quad seguem \quad uma \quad distribuição \quad normal, &\\
+  \end{cases}
+$$
+
+*2. Nível de significância:*
+
+Estabelecer um nível de significância ($\alpha$),
+
+
+*3. Calcular a estatística de teste:*
+
+Para calcular a estatística de teste, deve-se ordenar os dados, obtendo o valor de $F_n(x_i)$ fazendo a razão entre a posição $i$ e o valor total dos dados, $n$.
+O valor de $F(x_i)$ é encontrado na tabela da distribuição normal padrão, após a transformação dos dados pela relação:
+
+$$
+z_i = \frac{x_i - \overline{x}}{s}
+$$
+
+onde $\overline{x}$ é a média aritmética e $s$ é o desvio padrão dos dados.
+
+*4. Resultado do teste:*
+
+Rejeitar a hipótese nula ao nível de significância $\alpha$ se $D_n = máx(D^+, D^-)$ > $D_t$
+
+
+<br/>
+
+**Anderson-Darling**
+
+O teste de Anderson-Darling testa a hipótese de que uma dada amostra tenha sido retirada de uma dada população com função de distribuição acumulada contínua $F(x)$.
+
+A estatística de teste para esse método é:
+
+$$
+\boldsymbol{A^2}= - n \quad - \frac{1}{n}\sum_{i=1}^{n}[(2i - 1)ln (F(x_i))+(2(n-1)+1)ln (1-F(x_i))]
+$$
+
+Realização do teste:
+
+*1.Formulação das hipóteses:*
+
+$$
+\begin{cases}
+  H_0: Os\quad dados \quad seguem \quad uma \quad distribuição \quad normal, &\\
+  H_1: Os\quad dados \quad não \quad seguem \quad uma \quad distribuição \quad normal, &\\
+  \end{cases}
+$$
+
+*2. Nível de significância:*
+
+Estabelecer um nível de significância ($\alpha$),
+
+*3. Calcular a estatística de teste:*
+
+Ordena-se os valores da amostra $x_1$,$x_2$, ... , $x_n$;
+
+Quanto necessário, estima-se os parâmetros da distribuição de interesesse;
+
+Calcula-se o valor da estatística $A^2$
+
+Para uma distribuição com parâmetros conhecidos temos os valores da função de distribuição acumulada $A^2$ tabulados (Peter and Lewis(1960)).
+Quando não se tem os parâmetros conhecidos e é necessário estimar, Stephens (1974,1976,1977), utilizou métodos assintóticos para tabular os valores dessas probabilidades quando os parâmetros das distribuições são desconhecidos.
+
+Seguem os seguintes casos para a distribuição normal:
+
+Caso 0: Os parâmetros $\mu$ e $\sigma^2$ é totalmente conhecido
+
+Caso 1: $\mu$ é conhecio e $\sigma^2$ é estimado por $s^2$
+
+Caso 2: $\sigma^2$ é conhecio e $\mu$ é estimado por $\overline{x}$
+
+Caso 3: Nenhum dos parâmetros é conhecido, sendo estimados por $(\overline{x},s^2)$
+
+
+*4. Resultado do teste:*
+
+Rejeitar a hipótese nula ao nível de significância $\alpha$ se $A^2_t$ > $A^2_c$
+
+
+<br/>
+
+**Jarque-Bera**
+
+O teste de Jaque-Bera onde se utiliza a assimetria e a curtose dos dados e é indicado para amostras grandes.
+
+
+A estatística de teste utilizada é:
+
+$$
+JB = \frac{n - k + 1}{6}(S^2 + \frac{1}{4}(C - 3)^2)
+$$
+
+onde $n$ é o número de observações, $s$ indica a assimetria, $c$ a curtose e $k$ o número de parâmetros da regressão.
+
+onde:
+
+$$
+S = \frac{\frac{1}{n}\sum_{i = 1}^{n}(x_i - \overline{x})^3}{(\frac{1}{n}\sum_{i = 1}^{n}(x_i - \overline{x})^2)^\frac{3}{2}}
+$$
+
+$$
+C = \frac{\frac{1}{n}\sum_{i = 1}^{n}(x_i - \overline{x})^4}{(\frac{1}{n}\sum_{i = 1}^{n}(x_i - \overline{x})^2)^2}
+$$
+
+Realização do teste:
+
+*1.Formulação das hipóteses:*
+
+$$
+\begin{cases}
+  H_0: Os\quad dados \quad seguem \quad uma \quad distribuição \quad normal, &\\
+  H_1: Os\quad dados \quad não \quad seguem \quad uma \quad distribuição \quad normal, &\\
+  \end{cases}
+$$
+
+
+*2. Nível de significância:*
+
+Estabelecer um nível de significância ($\alpha$),
+
+*3. Calcular a estatística de teste:*
+
+Calcula-se a estatística do teste, conforme fórmula mostrada acima.
+
+
+*4. Resultado do teste:*
+
+Rejeitar a hipótese nula ao nível de significância $\alpha$ se $JB_t$ > $JB_c$
+
+
+<br/>
+
+
+## Códigos utilizados
+
+
+Para realizar as curvas de poder, utilizados os códigos abaixo:
+
+
+```{r, warning=FALSE}
+## Pacotes utilizados
+require(nortest)
+require(tseries)
+require(ggplot2)
+require(nortest)
+require(normtest)
+require(tseries)
+require(grid)
+require(gtable)
+require(gridExtra)
+require(lattice)
+
+
+## Tamanhos de amostras utilizadas
+n <- c(8,25,50,100,200); i <- 1 # i pode variar entre [1:5]
+
+## Testes utilizados
+t <- c('shapiro', 'ks', 'jarque', 'darling'); l <- 1 # l pode variar entre [1:4]
+
+
+## Distribuições utilizadas
+f <- c('student', 'gamma'); j <- 1 # j pode variar entre [1:2]
+
+## Variação dos graus de liberadade para a t de student
+df_tt <- c(20,18,16,14,12,10,8,6,3,1); d <- 1 # d pode variar entre [1:10]
+
+## Variação do alpha da distribuição gamma
+alpha <- c(500, 250, 125, 100, 75, 50, 25, 15, 10, 5); c <- 1 # c pode variar entre [1:10]
+
+
+## Quantidade de simulações realizadas (Monte Carlo)
+simula <- 10000 # Quantidade de dados simulados
+
+
+## Função que irá calcular as os p-valores para cada teste e
+## para cada distribuição
+
+## parametros 
+## n: número de amotras
+## func: distribuição (t de student, gamma)
+## test: teste de normalidade
+## alpha: paramentros para a distribuição gamma
+## df: graus de liberdade para a distribuição t de student
+
+
+
+hzero <- function(n, func, test, alpha, df) {
+  if (func == "student"){
+    student <- rt(n, df = (df))
+    if (test == 'shapiro'){return(shapiro.test(student)$p.value)}
+    if (test == 'ks')     {return(ks.test(student, 'pnorm', 0, 1)$p.value)}
+    if (test == 'jarque') {return(jarque.bera.test(student)$p.value)}
+    if (test == 'darling'){return(ad.test(student)$p.value)}
+  }
+  if (func == "gamma"){
+    gamma <- rgamma(n, shape = alpha, rate = 1)
+    if (test == "shapiro"){return(shapiro.test(gamma)$p.value)}
+    if (test == 'ks')     {return(ks.test(gamma, 'pnorm', alpha, sqrt(alpha))$p.value)}
+    if (test == 'jarque') {return(jarque.bera.test(gamma)$p.value)}
+    if (test == 'darling'){return(ad.test(gamma)$p.value)}
+  }
+}
+
+
+
+## Loop que irá atribuir os p-valores para cada distribuição
+## e para cada teste
+
+## varia o número de amostras
+while(i <= 5){
+  ## varia as distribuições
+  while(j <= 2){
+    ## varia os testes
+    while(l <= 4){
+      ## j == 1 indica que a distribuição é t de student
+      if(j == 1){
+        ## varia os graus de liberadade 
+        while(d <= 10){
+          assign(paste0(t[l],"_",f[j],"_",n[i],"_",df_tt[d]), 
+                 (replicate(hzero(n = n[i], 
+                                  func = f[j], 
+                                  test = t[l], 
+                                  alpha = alpha[c],
+                                  df = df_tt[d]),
+                                  n = simula)))
+          d <- d + 1
+        }
+        d <- 1
+      }
+      ## j == 2 indica que a distribuição é gamma
+
+      if(j == 2){
+        ## varia os parâmetros da distribuição gamma
+        while(c <= 10){
+          assign(paste0(t[l],"_",f[j],"_",n[i],"_",alpha[c]),
+                 (replicate(hzero(n = n[i],
+                                  func = f[j], 
+                                  test = t[l], 
+                                  alpha = alpha[c], 
+                                  df = df_tt[d]), 
+                                  n = simula)))
+          c <- c + 1
+        }
+        c <- 1
+      }
+      l <- l + 1
+    }
+    l <- 1
+    j <- j + 1
+  }
+  j <- 1
+  i <- i + 1
+}
+
+```
+
+Após o o término do $loop$, será criado um objeto para cada conjunto, de teste, distribuição, tamanho de amostra e parâmentro da distribuição. A função $assingn$ foi utilizada para que desenvolver esse método de criação de cada objeto.
+
+Um exemplo de um objeto é:
+
+**ks_student_8_20**
+
+*ks*: indica o teste
+
+*student*: indica a distribuição
+
+*8*: indica o tamanho da amostra
+
+*20*: indica o parâmetro
+
+
+Após o término do $loop$ e da criação dos objetos, criamos os gráficos com as curvas de poder:
+
+
+```{r}
+
+## Distribuição T de student com amostra de tamanho 8
+
+
+## Criando um data.frame para cada teste da distribuição 
+## t de student, variando os graus de liberdade e 
+## retirando a taxa de rejeição para cada variação
+## dos graus de liberdade
+
+
+t_ks8 <- cbind(NULL)   
+t_ks8 <- (rbind(t_ks8,     cbind(sum(ks_student_8_20 < 0.05) / simula ,
+                                 sum(ks_student_8_18 < 0.05) / simula ,
+                                 sum(ks_student_8_16 < 0.05) / simula ,
+                                 sum(ks_student_8_14 < 0.05) / simula ,
+                                 sum(ks_student_8_12 < 0.05) / simula , 
+                                 sum(ks_student_8_10 < 0.05) / simula , 
+                                 sum(ks_student_8_8  < 0.05) / simula , 
+                                 sum(ks_student_8_6  < 0.05) / simula ,
+                                 sum(ks_student_8_3  < 0.05) / simula ,
+                                 sum(ks_student_8_1  < 0.05) / simula )))
+
+t_sh8 <- cbind(NULL)   
+t_sh8 <- (rbind(t_sh8,     cbind(sum(shapiro_student_8_20 < 0.05) / simula ,
+                                 sum(shapiro_student_8_18 < 0.05) / simula ,
+                                 sum(shapiro_student_8_16 < 0.05) / simula ,
+                                 sum(shapiro_student_8_14 < 0.05) / simula ,
+                                 sum(shapiro_student_8_12 < 0.05) / simula , 
+                                 sum(shapiro_student_8_10 < 0.05) / simula , 
+                                 sum(shapiro_student_8_8  < 0.05) / simula , 
+                                 sum(shapiro_student_8_6  < 0.05) / simula ,
+                                 sum(shapiro_student_8_3  < 0.05) / simula ,
+                                 sum(shapiro_student_8_1  < 0.05) / simula )))
+
+t_j8 <- cbind(NULL)   
+t_j8 <- (rbind(t_j8,     cbind(sum(jarque_student_8_20 < 0.05) / simula ,
+                               sum(jarque_student_8_18 < 0.05) / simula ,
+                               sum(jarque_student_8_16 < 0.05) / simula ,
+                               sum(jarque_student_8_14 < 0.05) / simula ,
+                               sum(jarque_student_8_12 < 0.05) / simula , 
+                               sum(jarque_student_8_10 < 0.05) / simula , 
+                               sum(jarque_student_8_8  < 0.05) / simula , 
+                               sum(jarque_student_8_6  < 0.05) / simula ,
+                               sum(jarque_student_8_3  < 0.05) / simula ,
+                               sum(jarque_student_8_1  < 0.05) / simula )))
+
+
+t_d8 <- cbind(NULL)   
+t_d8 <- (rbind(t_d8,     cbind(sum(darling_student_8_20 < 0.05) / simula ,
+                               sum(darling_student_8_18 < 0.05) / simula ,
+                               sum(darling_student_8_16 < 0.05) / simula ,
+                               sum(darling_student_8_14 < 0.05) / simula ,
+                               sum(darling_student_8_12 < 0.05) / simula , 
+                               sum(darling_student_8_10 < 0.05) / simula , 
+                               sum(darling_student_8_8  < 0.05) / simula , 
+                               sum(darling_student_8_6  < 0.05) / simula ,
+                               sum(darling_student_8_3  < 0.05) / simula ,
+                               sum(darling_student_8_1  < 0.05) / simula )))
+
+
+## Criando um novo data.frame com cada data.frame de cada teste
+## e realizando uma marcação para cada teste
+
+df_t8 <- data.frame(xx =   c(t_sh8,
+                             t_ks8,
+                             t_d8,
+                             t_j8),
+                      scala = (df_tt), 
+                      ggg   = factor(rep(1:4, c(10,10,10,10))))
+
+# Ordenando a escala de graus de liberdade para plotar o gráfico
+df_t8$scala <- as.factor(-df_t8$scala)
+
+# Realizando o objeto ggplot
+plot_t8 <- ggplot(df_t8, aes(x=scala, y = xx, colour = ggg,group = ggg)) +
+  geom_line(stat = "identity") + 
+  ggtitle(paste("Distribuição T de Student com n = ",n[1]))+
+  labs(y= "Probalidade de Rejeitar H0", x = "Graus de Liberdade") +
+  scale_colour_hue(name="Curvas de Poder", labels=c('Shapiro','KS', 'Darling','Jarque'))
+
+
+# Alterando valores de rejeição de H0, para realizar uma tabela 
+# relacionando GL e os testes
+
+p <- 1
+t_ks8p <- data.frame(NULL)
+t_sh8p <- data.frame(NULL)
+t_j8p  <- data.frame(NULL)
+t_d8p  <- data.frame(NULL)
+
+#  Criando um while com os valores de rejeição para cada grau de
+# liberadade
+
+while(p <= 10){
+  t_ks8p[p,1] <-  paste(round(t_ks8[p],2)*100,'%')
+  t_sh8p[p,1] <-  paste(round(t_sh8[p],2)*100,'%')
+  t_j8p[p,1]  <-  paste(round(t_j8[p],2)*100,'%')
+  t_d8p[p,1]  <-  paste(round(t_d8[p],2)*100,'%')
+  
+  # Renomeando colunas com os nomes dos testes
+  colnames(t_ks8p) <-  c('KS')
+  colnames(t_sh8p) <-  c('Shapiro')
+  colnames(t_j8p)  <-  c('Jarque')
+  colnames(t_d8p)  <-  c('Darling')
+  
+  
+  p <- p + 1
+}
+
+#  Renomeando vetor de Graus de Liberdade 
+df_tt2 <- data.frame(df_tt)
+colnames(df_tt2) <- ('GL')
+
+
+#  Manipulando dados para gerar a tabela
+
+t_8 <- data.frame(df_tt2,t_sh8p,t_ks8p,t_d8p,t_j8p)
+title_t8 <- textGrob("Rejeição de H0 - Distribuição T de Student",
+                       gp=gpar(fontsize=12,
+                               hjust = 20,
+                               vjust = 20))
+
+table_t8 <- tableGrob(t_8)
+
+table_t8 <- gtable_add_rows(
+  table_t8, 
+  heights = grobHeight(title_t8),
+  pos = 0)
+
+table_t8 <- gtable_add_grob(
+  table_t8, 
+  title_t8, 
+  1, 1, 1, ncol(table_t8))
+
+grid.arrange(plot_t8)
+grid.arrange(table_t8)
+
+
+
+```
+
+
+Os demais gráficos foram realizados da mesma maneira, apenas alterando os objetos.
+
+```{r,include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, message = FALSE)
+
+```
+
+```{r}
+
+
+
+###########################################################################
+# N = 25
+
+t_ks25 <- cbind(NULL)   
+t_ks25 <- (rbind(t_ks25,   cbind(sum(ks_student_25_20  < 0.05) / simula ,
+                                 sum(ks_student_25_18  < 0.05) / simula ,
+                                 sum(ks_student_25_16  < 0.05) / simula ,
+                                 sum(ks_student_25_14  < 0.05) / simula ,
+                                 sum(ks_student_25_12  < 0.05) / simula , 
+                                 sum(ks_student_25_10  < 0.05) / simula , 
+                                 sum(ks_student_25_8   < 0.05) / simula , 
+                                 sum(ks_student_25_6   < 0.05) / simula ,
+                                 sum(ks_student_25_3   < 0.05) / simula ,
+                                 sum(ks_student_25_1   < 0.05) / simula )))
+
+t_sh25 <- cbind(NULL)   
+t_sh25 <- (rbind(t_sh25,   cbind(sum(shapiro_student_25_20  < 0.05) / simula ,
+                                 sum(shapiro_student_25_18  < 0.05) / simula ,
+                                 sum(shapiro_student_25_16  < 0.05) / simula ,
+                                 sum(shapiro_student_25_14  < 0.05) / simula ,
+                                 sum(shapiro_student_25_12  < 0.05) / simula , 
+                                 sum(shapiro_student_25_10  < 0.05) / simula , 
+                                 sum(shapiro_student_25_8   < 0.05) / simula , 
+                                 sum(shapiro_student_25_6   < 0.05) / simula ,
+                                 sum(shapiro_student_25_3   < 0.05) / simula ,
+                                 sum(shapiro_student_25_1   < 0.05) / simula )))
+
+t_j25 <- cbind(NULL)   
+t_j25 <- (rbind(t_j25,   cbind(sum(jarque_student_25_20  < 0.05) / simula ,
+                               sum(jarque_student_25_18  < 0.05) / simula ,
+                               sum(jarque_student_25_16  < 0.05) / simula ,
+                               sum(jarque_student_25_14  < 0.05) / simula ,
+                               sum(jarque_student_25_12  < 0.05) / simula , 
+                               sum(jarque_student_25_10  < 0.05) / simula , 
+                               sum(jarque_student_25_8   < 0.05) / simula , 
+                               sum(jarque_student_25_6   < 0.05) / simula ,
+                               sum(jarque_student_25_3   < 0.05) / simula ,
+                               sum(jarque_student_25_1   < 0.05) / simula )))
+
+
+t_d25 <- cbind(NULL)   
+t_d25 <- (rbind(t_d25,   cbind(sum(darling_student_25_20   < 0.05) / simula ,
+                               sum(darling_student_25_18   < 0.05) / simula ,
+                               sum(darling_student_25_16   < 0.05) / simula ,
+                               sum(darling_student_25_14   < 0.05) / simula ,
+                               sum(darling_student_25_12   < 0.05) / simula , 
+                               sum(darling_student_25_10   < 0.05) / simula , 
+                               sum(darling_student_25_8    < 0.05) / simula , 
+                               sum(darling_student_25_6    < 0.05) / simula ,
+                               sum(darling_student_25_3    < 0.05) / simula ,
+                               sum(darling_student_25_1    < 0.05) / simula )))
+
+# 
+
+df_t25 <- data.frame(xx =  c(t_sh25,
+                             t_ks25,
+                             t_d25,
+                             t_j25),
+                    scala = (df_tt), 
+                    ggg   = factor(rep(1:4, c(10,10,10,10))))
+
+# Ordenando a escala de graus de liberdade para plotar o gráfico
+df_t25$scala <- as.factor(-df_t25$scala)
+
+# Realizando o objeto ggplot
+plot_t25 <- ggplot(df_t25, aes(x=scala, y = xx, colour = ggg,group = ggg)) +
+  geom_line(stat = "identity") + 
+  ggtitle(paste("Distribuição T de Student com n = ",n[2]))+
+  labs(y= "Probalidade de Rejeitar H0", x = "Graus de Liberdade") +
+  scale_colour_hue(name="Curvas de Poder", labels=c('Shapiro','KS', 'Darling','Jarque'))
+
+
+# Alterando valores de rejeição de HO, para realizar uma tabela 
+# realcionando GL e os testes
+p <- 1
+t_ks25p <- data.frame(NULL)
+t_sh25p <- data.frame(NULL)
+t_j25p  <- data.frame(NULL)
+t_d25p  <- data.frame(NULL)
+
+#  Criando um while com os valores de rejeição para cada grau de
+# liberadade
+
+while(p <= 10){
+  t_ks25p[p,1] <-  paste(round(t_ks25[p],2)*100,'%')
+  t_sh25p[p,1] <-  paste(round(t_sh25[p],2)*100,'%')
+  t_j25p[p,1]  <-  paste(round(t_j25[p],2)*100,'%')
+  t_d25p[p,1]  <-  paste(round(t_d25[p],2)*100,'%')
+  
+  # Renomeando colunas com os nomes dos testes
+  colnames(t_ks25p) <-  c('KS')
+  colnames(t_sh25p) <-  c('Shapiro')
+  colnames(t_j25p)  <-  c('Jarque')
+  colnames(t_d25p)  <-  c('Darling')
+  
+  
+  p <- p + 1
+}
+
+#  Manipulando dados para gerar a tabela
+
+t_25 <- data.frame(df_tt2,t_sh25p,t_ks25p,t_d25p,t_j25p)
+title_t25 <- textGrob("Rejeição de H0 - Distribuição T de Student",
+                     gp=gpar(fontsize=12,
+                             hjust = 20,
+                             vjust = 20))
+
+table_t25 <- tableGrob(t_25)
+
+table_t25 <- gtable_add_rows(
+  table_t25, 
+  heights = grobHeight(title_t25),
+  pos = 0)
+
+table_t25 <- gtable_add_grob(
+  table_t25, 
+  title_t25, 
+  1, 1, 1, ncol(table_t25))
+
+
+
+
+###########################################################################
+# N = 50
+
+t_ks50 <- cbind(NULL)   
+t_ks50 <- (rbind(t_ks50,  cbind(sum(ks_student_50_20  < 0.05) / simula ,
+                                sum(ks_student_50_18  < 0.05) / simula ,
+                                sum(ks_student_50_16  < 0.05) / simula ,
+                                sum(ks_student_50_14  < 0.05) / simula ,
+                                sum(ks_student_50_12  < 0.05) / simula , 
+                                sum(ks_student_50_10  < 0.05) / simula , 
+                                sum(ks_student_50_8   < 0.05) / simula , 
+                                sum(ks_student_50_6   < 0.05) / simula ,
+                                sum(ks_student_50_3   < 0.05) / simula ,
+                                sum(ks_student_50_1   < 0.05) / simula )))
+
+t_sh50 <- cbind(NULL)   
+t_sh50 <- (rbind(t_sh50,   cbind(sum(shapiro_student_50_20  < 0.05) / simula ,
+                                 sum(shapiro_student_50_18  < 0.05) / simula ,
+                                 sum(shapiro_student_50_16  < 0.05) / simula ,
+                                 sum(shapiro_student_50_14  < 0.05) / simula ,
+                                 sum(shapiro_student_50_12  < 0.05) / simula , 
+                                 sum(shapiro_student_50_10  < 0.05) / simula , 
+                                 sum(shapiro_student_50_8   < 0.05) / simula , 
+                                 sum(shapiro_student_50_6   < 0.05) / simula ,
+                                 sum(shapiro_student_50_3   < 0.05) / simula ,
+                                 sum(shapiro_student_50_1   < 0.05) / simula )))
+
+t_j50 <- cbind(NULL)   
+t_j50 <- (rbind(t_j50,   cbind(sum(jarque_student_50_20  < 0.05) / simula ,
+                               sum(jarque_student_50_18  < 0.05) / simula ,
+                               sum(jarque_student_50_16  < 0.05) / simula ,
+                               sum(jarque_student_50_14  < 0.05) / simula ,
+                               sum(jarque_student_50_12  < 0.05) / simula , 
+                               sum(jarque_student_50_10  < 0.05) / simula , 
+                               sum(jarque_student_50_8   < 0.05) / simula , 
+                               sum(jarque_student_50_6   < 0.05) / simula ,
+                               sum(jarque_student_50_3   < 0.05) / simula ,
+                               sum(jarque_student_50_1   < 0.05) / simula )))
+
+
+t_d50 <- cbind(NULL)   
+t_d50 <- (rbind(t_d50,   cbind(sum(darling_student_50_20   < 0.05) / simula ,
+                               sum(darling_student_50_18   < 0.05) / simula ,
+                               sum(darling_student_50_16   < 0.05) / simula ,
+                               sum(darling_student_50_14   < 0.05) / simula ,
+                               sum(darling_student_50_12   < 0.05) / simula , 
+                               sum(darling_student_50_10   < 0.05) / simula , 
+                               sum(darling_student_50_8    < 0.05) / simula , 
+                               sum(darling_student_50_6    < 0.05) / simula ,
+                               sum(darling_student_50_3    < 0.05) / simula ,
+                               sum(darling_student_50_1    < 0.05) / simula )))
+
+# 
+
+df_t50 <- data.frame(xx =  c(t_sh50,
+                             t_ks50,
+                             t_d50,
+                             t_j50),
+                     scala = (df_tt), 
+                     ggg   = factor(rep(1:4, c(10,10,10,10))))
+
+# Ordenando a escala de graus de liberdade para plotar o gráfico
+df_t50$scala <- as.factor(-df_t50$scala)
+
+# Realizando o objeto ggplot
+plot_t50 <- ggplot(df_t50, aes(x=scala, y = xx, colour = ggg,group = ggg)) +
+  geom_line(stat = "identity") + 
+  ggtitle(paste("Distribuição T de Student com n = ",n[3]))+
+  labs(y= "Probalidade de Rejeitar H0", x = "Graus de Liberdade") +
+  scale_colour_hue(name="Curvas de Poder", labels=c('Shapiro','KS', 'Darling','Jarque'))
+
+
+# Alterando valores de rejeição de HO, para realizar uma tabela 
+# realcionando GL e os testes
+p <- 1
+t_ks50p <- data.frame(NULL)
+t_sh50p <- data.frame(NULL)
+t_j50p  <- data.frame(NULL)
+t_d50p  <- data.frame(NULL)
+
+#  Criando um while com os valores de rejeição para cada grau de
+# liberadade
+
+while(p <= 10){
+  t_ks50p[p,1] <-  paste(round(t_ks50[p],2)*100,'%')
+  t_sh50p[p,1] <-  paste(round(t_sh50[p],2)*100,'%')
+  t_j50p[p,1]  <-  paste(round(t_j50[p],2)*100,'%')
+  t_d50p[p,1]  <-  paste(round(t_d50[p],2)*100,'%')
+  
+  # Renomeando colunas com os nomes dos testes
+  colnames(t_ks50p) <-  c('KS')
+  colnames(t_sh50p) <-  c('Shapiro')
+  colnames(t_j50p)  <-  c('Jarque')
+  colnames(t_d50p)  <-  c('Darling')
+  
+  
+  p <- p + 1
+}
+
+#  Manipulando dados para gerar a tabela
+
+t_50 <- data.frame(df_tt2,t_sh50p,t_ks50p,t_d50p,t_j50p)
+title_t50 <- textGrob("Rejeição de H0 - Distribuição T de Student",
+                      gp=gpar(fontsize=12,
+                              hjust = 20,
+                              vjust = 20))
+
+table_t50 <- tableGrob(t_50)
+
+table_t50 <- gtable_add_rows(
+  table_t50, 
+  heights = grobHeight(title_t50),
+  pos = 0)
+
+table_t50 <- gtable_add_grob(
+  table_t50, 
+  title_t50, 
+  1, 1, 1, ncol(table_t50))
+
+
+
+
+###########################################################################
+# N = 100
+
+t_ks100 <- cbind(NULL)   
+t_ks100 <- (rbind(t_ks100,cbind(sum(ks_student_100_20   < 0.05) / simula ,
+                                sum(ks_student_100_18   < 0.05) / simula ,
+                                sum(ks_student_100_16   < 0.05) / simula ,
+                                sum(ks_student_100_14   < 0.05) / simula ,
+                                sum(ks_student_100_12   < 0.05) / simula , 
+                                sum(ks_student_100_10   < 0.05) / simula , 
+                                sum(ks_student_100_8    < 0.05) / simula , 
+                                sum(ks_student_100_6    < 0.05) / simula ,
+                                sum(ks_student_100_3    < 0.05) / simula ,
+                                sum(ks_student_100_1    < 0.05) / simula )))
+
+t_sh100 <- cbind(NULL)   
+t_sh100 <- (rbind(t_sh100, cbind(sum(shapiro_student_100_20   < 0.05) / simula ,
+                                 sum(shapiro_student_100_18   < 0.05) / simula ,
+                                 sum(shapiro_student_100_16   < 0.05) / simula ,
+                                 sum(shapiro_student_100_14   < 0.05) / simula ,
+                                 sum(shapiro_student_100_12   < 0.05) / simula , 
+                                 sum(shapiro_student_100_10   < 0.05) / simula , 
+                                 sum(shapiro_student_100_8    < 0.05) / simula , 
+                                 sum(shapiro_student_100_6    < 0.05) / simula ,
+                                 sum(shapiro_student_100_3    < 0.05) / simula ,
+                                 sum(shapiro_student_100_1    < 0.05) / simula )))
+
+t_j100 <- cbind(NULL)   
+t_j100 <- (rbind(t_j100, cbind(sum(jarque_student_100_20   < 0.05) / simula ,
+                               sum(jarque_student_100_18   < 0.05) / simula ,
+                               sum(jarque_student_100_16   < 0.05) / simula ,
+                               sum(jarque_student_100_14   < 0.05) / simula ,
+                               sum(jarque_student_100_12   < 0.05) / simula , 
+                               sum(jarque_student_100_10   < 0.05) / simula , 
+                               sum(jarque_student_100_8    < 0.05) / simula , 
+                               sum(jarque_student_100_6    < 0.05) / simula ,
+                               sum(jarque_student_100_3    < 0.05) / simula ,
+                               sum(jarque_student_100_1    < 0.05) / simula )))
+
+
+t_d100 <- cbind(NULL)   
+t_d100 <- (rbind(t_d100, cbind(sum(darling_student_100_20   < 0.05) / simula ,
+                               sum(darling_student_100_18   < 0.05) / simula ,
+                               sum(darling_student_100_16   < 0.05) / simula ,
+                               sum(darling_student_100_14   < 0.05) / simula ,
+                               sum(darling_student_100_12   < 0.05) / simula , 
+                               sum(darling_student_100_10   < 0.05) / simula , 
+                               sum(darling_student_100_8    < 0.05) / simula , 
+                               sum(darling_student_100_6    < 0.05) / simula ,
+                               sum(darling_student_100_3    < 0.05) / simula ,
+                               sum(darling_student_100_1    < 0.05) / simula )))
+
+# 
+
+df_t100 <- data.frame(xx =  c(t_sh100,
+                             t_ks100,
+                             t_d100,
+                             t_j100),
+                     scala = (df_tt), 
+                     ggg   = factor(rep(1:4, c(10,10,10,10))))
+
+# Ordenando a escala de graus de liberdade para plotar o gráfico
+df_t100$scala <- as.factor(-df_t100$scala)
+
+# Realizando o objeto ggplot
+plot_t100 <- ggplot(df_t100, aes(x=scala, y = xx, colour = ggg,group = ggg)) +
+  geom_line(stat = "identity") + 
+  ggtitle(paste("Distribuição T de Student com n = ",n[4]))+
+  labs(y= "Probalidade de Rejeitar H0", x = "Graus de Liberdade") +
+  scale_colour_hue(name="Curvas de Poder", labels=c('Shapiro','KS', 'Darling','Jarque'))
+
+
+# Alterando valores de rejeição de HO, para realizar uma tabela 
+# realcionando GL e os testes
+p <- 1
+t_ks100p <- data.frame(NULL)
+t_sh100p <- data.frame(NULL)
+t_j100p  <- data.frame(NULL)
+t_d100p  <- data.frame(NULL)
+
+#  Criando um while com os valores de rejeição para cada grau de
+# liberadade
+
+while(p <= 10){
+  t_ks100p[p,1] <-  paste(round(t_ks100[p],2)*100,'%')
+  t_sh100p[p,1] <-  paste(round(t_sh100[p],2)*100,'%')
+  t_j100p[p,1]  <-  paste(round(t_j100[p],2)*100,'%')
+  t_d100p[p,1]  <-  paste(round(t_d100[p],2)*100,'%')
+  
+  # Renomeando colunas com os nomes dos testes
+  colnames(t_ks100p) <-  c('KS')
+  colnames(t_sh100p) <-  c('Shapiro')
+  colnames(t_j100p)  <-  c('Jarque')
+  colnames(t_d100p)  <-  c('Darling')
+  
+  
+  p <- p + 1
+}
+
+#  Manipulando dados para gerar a tabela
+
+t_100 <- data.frame(df_tt2,t_sh100p,t_ks100p,t_d100p,t_j100p)
+title_t100 <- textGrob("Rejeição de H0 - Distribuição T de Student",
+                      gp=gpar(fontsize=12,
+                              hjust = 20,
+                              vjust = 20))
+
+table_t100 <- tableGrob(t_100)
+
+table_t100 <- gtable_add_rows(
+  table_t100, 
+  heights = grobHeight(title_t100),
+  pos = 0)
+
+table_t100 <- gtable_add_grob(
+  table_t100, 
+  title_t100, 
+  1, 1, 1, ncol(table_t100))
+
+
+
+
+###########################################################################
+# N = 200
+
+t_ks200 <- cbind(NULL)   
+t_ks200 <- (rbind(t_ks200, cbind(sum(ks_student_200_20 < 0.05) / simula ,
+                                 sum(ks_student_200_18 < 0.05) / simula ,
+                                 sum(ks_student_200_16 < 0.05) / simula ,
+                                 sum(ks_student_200_14 < 0.05) / simula ,
+                                 sum(ks_student_200_12 < 0.05) / simula , 
+                                 sum(ks_student_200_10 < 0.05) / simula , 
+                                 sum(ks_student_200_8  < 0.05) / simula , 
+                                 sum(ks_student_200_6  < 0.05) / simula ,
+                                 sum(ks_student_200_3  < 0.05) / simula ,
+                                 sum(ks_student_200_1  < 0.05) / simula )))
+
+t_sh200 <- cbind(NULL)   
+t_sh200 <- (rbind(t_sh200, cbind(sum(shapiro_student_200_20 < 0.05) / simula ,
+                                 sum(shapiro_student_200_18 < 0.05) / simula ,
+                                 sum(shapiro_student_200_16 < 0.05) / simula ,
+                                 sum(shapiro_student_200_14 < 0.05) / simula ,
+                                 sum(shapiro_student_200_12 < 0.05) / simula , 
+                                 sum(shapiro_student_200_10 < 0.05) / simula , 
+                                 sum(shapiro_student_200_8  < 0.05) / simula , 
+                                 sum(shapiro_student_200_6  < 0.05) / simula ,
+                                 sum(shapiro_student_200_3  < 0.05) / simula ,
+                                 sum(shapiro_student_200_1  < 0.05) / simula )))
+
+t_j200 <- cbind(NULL)   
+t_j200 <- (rbind(t_j200, cbind(sum(jarque_student_200_20 < 0.05) / simula ,
+                               sum(jarque_student_200_18 < 0.05) / simula ,
+                               sum(jarque_student_200_16 < 0.05) / simula ,
+                               sum(jarque_student_200_14 < 0.05) / simula ,
+                               sum(jarque_student_200_12 < 0.05) / simula , 
+                               sum(jarque_student_200_10 < 0.05) / simula , 
+                               sum(jarque_student_200_8  < 0.05) / simula , 
+                               sum(jarque_student_200_6  < 0.05) / simula ,
+                               sum(jarque_student_200_3  < 0.05) / simula ,
+                               sum(jarque_student_200_1  < 0.05) / simula )))
+
+
+t_d200 <- cbind(NULL)   
+t_d200 <- (rbind(t_d200, cbind(sum(darling_student_200_20 < 0.05) / simula ,
+                               sum(darling_student_200_18 < 0.05) / simula ,
+                               sum(darling_student_200_16 < 0.05) / simula ,
+                               sum(darling_student_200_14 < 0.05) / simula ,
+                               sum(darling_student_200_12 < 0.05) / simula , 
+                               sum(darling_student_200_10 < 0.05) / simula , 
+                               sum(darling_student_200_8  < 0.05) / simula , 
+                               sum(darling_student_200_6  < 0.05) / simula ,
+                               sum(darling_student_200_3  < 0.05) / simula ,
+                               sum(darling_student_200_1  < 0.05) / simula )))
+
+# 
+
+df_t200 <- data.frame(xx = c(t_sh200,
+                             t_ks200,
+                             t_d200,
+                             t_j200),
+                      scala = (df_tt), 
+                      ggg   = factor(rep(1:4, c(10,10,10,10))))
+
+# Ordenando a escala de graus de liberdade para plotar o gráfico
+df_t200$scala <- as.factor(-df_t200$scala)
+
+# Realizando o objeto ggplot
+plot_t200 <- ggplot(df_t200, aes(x=scala, y = xx, colour = ggg,group = ggg)) +
+  geom_line(stat = "identity") + 
+  ggtitle(paste("Distribuição T de Student com n = ",n[5]))+
+  labs(y= "Probalidade de Rejeitar H0", x = "Graus de Liberdade") +
+  scale_colour_hue(name="Curvas de Poder", labels=c('Shapiro','KS', 'Darling','Jarque'))
+
+
+
+# Alterando valores de rejeição de HO, para realizar uma tabela 
+# realacionando GL e os testes
+p <- 1
+t_ks200p <- data.frame(NULL)
+t_sh200p <- data.frame(NULL)
+t_j200p  <- data.frame(NULL)
+t_d200p  <- data.frame(NULL)
+
+#  Criando um while com os valores de rejeição para cada grau de
+# liberadade
+
+while(p <= 10){
+  t_ks200p[p,1] <-  paste(round(t_ks200[p],2)*100,'%')
+  t_sh200p[p,1] <-  paste(round(t_sh200[p],2)*100,'%')
+  t_j200p[p,1]  <-  paste(round(t_j200[p],2)*100,'%')
+  t_d200p[p,1]  <-  paste(round(t_d200[p],2)*100,'%')
+  
+  # Renomeando colunas com os nomes dos testes
+  colnames(t_ks200p) <-  c('KS')
+  colnames(t_sh200p) <-  c('Shapiro')
+  colnames(t_j200p)  <-  c('Jarque')
+  colnames(t_d200p)  <-  c('Darling')
+  
+  
+  p <- p + 1
+}
+
+#  Manipulando dados para gerar a tabela
+
+t_200 <- data.frame(df_tt2,t_sh200p,t_ks200p,t_d200p,t_j200p)
+title_t200 <- textGrob("Rejeição de H0 - Distribuição T de Student",
+                       gp=gpar(fontsize=12,
+                               hjust = 20,
+                               vjust = 20))
+
+table_t200 <- tableGrob(t_200)
+
+table_t200 <- gtable_add_rows(
+  table_t200, 
+  heights = grobHeight(title_t200),
+  pos = 0)
+
+table_t200 <- gtable_add_grob(
+  table_t200, 
+  title_t200, 
+  1, 1, 1, ncol(table_t200))
+
+############################################ GAMMA
+##################### N = 8
+
+g_ks8 <- cbind(NULL)
+g_ks8 <- (rbind(g_ks8, cbind(sum(ks_gamma_8_500 < 0.05) / simula,
+                             sum(ks_gamma_8_250 < 0.05) / simula,
+                             sum(ks_gamma_8_125 < 0.05) / simula,
+                             sum(ks_gamma_8_100 < 0.05) / simula,
+                             sum(ks_gamma_8_75  < 0.05) / simula,
+                             sum(ks_gamma_8_50  < 0.05) / simula,
+                             sum(ks_gamma_8_25  < 0.05) / simula,
+                             sum(ks_gamma_8_15  < 0.05) / simula,
+                             sum(ks_gamma_8_10  < 0.05) / simula,
+                             sum(ks_gamma_8_5   < 0.05) / simula)))
+
+g_sh8 <- cbind(NULL)
+g_sh8 <- (rbind(g_sh8, cbind(sum(shapiro_gamma_8_500 < 0.05) / simula,
+                             sum(shapiro_gamma_8_250 < 0.05) / simula,
+                             sum(shapiro_gamma_8_125 < 0.05) / simula,
+                             sum(shapiro_gamma_8_100 < 0.05) / simula,
+                             sum(shapiro_gamma_8_75  < 0.05) / simula,
+                             sum(shapiro_gamma_8_50  < 0.05) / simula,
+                             sum(shapiro_gamma_8_25  < 0.05) / simula,
+                             sum(shapiro_gamma_8_15  < 0.05) / simula,
+                             sum(shapiro_gamma_8_10  < 0.05) / simula,
+                             sum(shapiro_gamma_8_5   < 0.05) / simula)))
+
+g_j8 <- cbind(NULL)
+g_j8 <- (rbind(g_j8, cbind(sum(jarque_gamma_8_500 < 0.05) / simula,
+                          sum(jarque_gamma_8_250 < 0.05) / simula,
+                          sum(jarque_gamma_8_125 < 0.05) / simula,
+                          sum(jarque_gamma_8_100 < 0.05) / simula,
+                          sum(jarque_gamma_8_75  < 0.05) / simula,
+                          sum(jarque_gamma_8_50  < 0.05) / simula,
+                          sum(jarque_gamma_8_25  < 0.05) / simula,
+                          sum(jarque_gamma_8_15  < 0.05) / simula,
+                          sum(jarque_gamma_8_10  < 0.05) / simula,
+                          sum(jarque_gamma_8_5   < 0.05) / simula)))
+
+g_d8 <- (cbind(NULL))
+g_d8 <- (rbind(g_d8, cbind(sum(darling_gamma_8_500 < 0.05) / simula,
+                           sum(darling_gamma_8_250 < 0.05) / simula,
+                           sum(darling_gamma_8_125 < 0.05) / simula,
+                           sum(darling_gamma_8_100 < 0.05) / simula,
+                           sum(darling_gamma_8_75  < 0.05) / simula,
+                           sum(darling_gamma_8_50  < 0.05) / simula,
+                           sum(darling_gamma_8_25  < 0.05) / simula,
+                           sum(darling_gamma_8_15  < 0.05) / simula,
+                           sum(darling_gamma_8_10  < 0.05) / simula,
+                           sum(darling_gamma_8_5   < 0.05) / simula)))
+
+dg_t8 <- data.frame(xx = c(g_sh8,
+                           g_ks8,
+                           g_d8,
+                           g_j8),
+                    scala = (alpha),
+                    ggg = factor(rep(1:4, c(10,10,10,10))))
+
+dg_t8$scala <- as.factor(-dg_t8$scala)
+
+plot_g8 <- ggplot(dg_t8, aes(x = scala, y = xx, colour = ggg, group = ggg)) +
+  geom_line(stat = 'identity') +
+  ggtitle(paste('Distribuição Gamma com n = ',n[1]))+
+  labs(y= "Probabilidade de Rejeitar H0", x = "Alpha") + 
+  scale_colour_hue(name = 'Curvas de Poder', labels = c('Shapiro', "KS", 'Darling', "Jarque"))
+
+p <- 1
+g_ks8p <- data.frame(NULL)
+g_sh8p <- data.frame(NULL)
+g_j8p  <- data.frame(NULL)
+g_d8p  <- data.frame(NULL)
+
+while(p <= 10){
+  g_ks8p[p,1] <- paste(round(g_ks8[p], 2)*100,'%')
+  g_sh8p[p,1] <- paste(round(g_sh8[p], 2)*100,'%')
+  g_j8p[p,1] <- paste(round(g_j8[p], 2)*100,'%')
+  g_d8p[p,1] <- paste(round(g_d8[p], 2)*100,'%')
+
+  colnames(g_ks8p) <- c("KS")
+  colnames(g_sh8p) <-  c('Shapiro')
+  colnames(g_j8p)  <-  c('Jarque')
+  colnames(g_d8p)  <-  c('Darling')
+  p <- p + 1
+}
+
+dg_tt2 <- data.frame(alpha)
+colnames(dg_tt2) <- ("Alpha")
+
+g_8 <- data.frame(dg_tt2, g_sh8p, g_ks8p, g_d8p, g_j8p)
+title_g8 <- textGrob("Rejeição de H0 - Distribuição Gamma",
+                     gp=gpar(fontsize = 12,
+                             hjust = 20,
+                             vjust = 20))
+
+table_g8 <- tableGrob(g_8)
+table_g8 <- gtable_add_rows(
+  table_g8, 
+  heights = grobHeight(title_g8),
+  pos = 0)
+
+table_g8 <- gtable_add_grob(
+  table_g8, 
+  title_g8, 
+  1, 1, 1, ncol(table_g8))
+
+############################################ n = 25
+
+g_ks25 <- cbind(NULL)
+g_ks25 <- (rbind(g_ks25, cbind(sum(ks_gamma_25_500 < 0.05) / simula,
+                             sum(ks_gamma_25_250 < 0.05) / simula,
+                             sum(ks_gamma_25_125 < 0.05) / simula,
+                             sum(ks_gamma_25_100 < 0.05) / simula,
+                             sum(ks_gamma_25_75  < 0.05) / simula,
+                             sum(ks_gamma_25_50  < 0.05) / simula,
+                             sum(ks_gamma_25_25  < 0.05) / simula,
+                             sum(ks_gamma_25_15  < 0.05) / simula,
+                             sum(ks_gamma_25_10  < 0.05) / simula,
+                             sum(ks_gamma_25_5   < 0.05) / simula)))
+
+g_sh25 <- cbind(NULL)
+g_sh25 <- (rbind(g_sh25, cbind(sum(shapiro_gamma_25_500 < 0.05) / simula,
+                             sum(shapiro_gamma_25_250 < 0.05) / simula,
+                             sum(shapiro_gamma_25_125 < 0.05) / simula,
+                             sum(shapiro_gamma_25_100 < 0.05) / simula,
+                             sum(shapiro_gamma_25_75  < 0.05) / simula,
+                             sum(shapiro_gamma_25_50  < 0.05) / simula,
+                             sum(shapiro_gamma_25_25  < 0.05) / simula,
+                             sum(shapiro_gamma_25_15  < 0.05) / simula,
+                             sum(shapiro_gamma_25_10  < 0.05) / simula,
+                             sum(shapiro_gamma_25_5   < 0.05) / simula)))
+
+g_j25 <- cbind(NULL)
+g_j25 <- (rbind(g_j25, cbind(sum(jarque_gamma_25_500 < 0.05) / simula,
+                           sum(jarque_gamma_25_250 < 0.05) / simula,
+                           sum(jarque_gamma_25_125 < 0.05) / simula,
+                           sum(jarque_gamma_25_100 < 0.05) / simula,
+                           sum(jarque_gamma_25_75  < 0.05) / simula,
+                           sum(jarque_gamma_25_50  < 0.05) / simula,
+                           sum(jarque_gamma_25_25  < 0.05) / simula,
+                           sum(jarque_gamma_25_15  < 0.05) / simula,
+                           sum(jarque_gamma_25_10  < 0.05) / simula,
+                           sum(jarque_gamma_25_5   < 0.05) / simula)))
+
+g_d25 <- (cbind(NULL))
+g_d25 <- (rbind(g_d25, cbind(sum(darling_gamma_25_500 < 0.05) / simula,
+                           sum(darling_gamma_25_250 < 0.05) / simula,
+                           sum(darling_gamma_25_125 < 0.05) / simula,
+                           sum(darling_gamma_25_100 < 0.05) / simula,
+                           sum(darling_gamma_25_75  < 0.05) / simula,
+                           sum(darling_gamma_25_50  < 0.05) / simula,
+                           sum(darling_gamma_25_25  < 0.05) / simula,
+                           sum(darling_gamma_25_15  < 0.05) / simula,
+                           sum(darling_gamma_25_10  < 0.05) / simula,
+                           sum(darling_gamma_25_5   < 0.05) / simula)))
+
+dg_t25 <- data.frame(xx = c(g_sh25,
+                           g_ks25,
+                           g_d25,
+                           g_j25),
+                    scala = (alpha),
+                    ggg = factor(rep(1:4, c(10,10,10,10))))
+
+dg_t25$scala <- as.factor(-dg_t25$scala)
+
+plot_g25 <- ggplot(dg_t25, aes(x = scala, y = xx, colour = ggg, group = ggg)) +
+  geom_line(stat = 'identity') +
+  ggtitle(paste('Distribuição Gamma com n = ',n[2]))+
+  labs(y= "Probabilidade de Rejeitar H0", x = "Alpha") + 
+  scale_colour_hue(name = 'Curvas de Poder', labels = c('Shapiro', "KS", 'Darling', "Jarque"))
+
+p <- 1
+g_ks25p <- data.frame(NULL)
+g_sh25p <- data.frame(NULL)
+g_j25p  <- data.frame(NULL)
+g_d25p  <- data.frame(NULL)
+
+while(p <= 10){
+  g_ks25p[p,1] <- paste(round(g_ks25[p], 2)*100,'%')
+  g_sh25p[p,1] <- paste(round(g_sh25[p], 2)*100,'%')
+  g_j25p[p,1] <- paste(round(g_j25[p], 2)*100,'%')
+  g_d25p[p,1] <- paste(round(g_d25[p], 2)*100,'%')
+  
+  colnames(g_ks25p) <- c("KS")
+  colnames(g_sh25p) <-  c('Shapiro')
+  colnames(g_j25p)  <-  c('Jarque')
+  colnames(g_d25p)  <-  c('Darling')
+  p <- p + 1
+}
+
+g_25 <- data.frame(dg_tt2, g_sh25p, g_ks25p, g_d25p, g_j25p)
+title_g25 <- textGrob("Rejeição de H0 - Distribuição Gamma",
+                     gp=gpar(fontsize = 12,
+                             hjust = 20,
+                             vjust = 20))
+
+table_g25 <- tableGrob(g_25)
+table_g25 <- gtable_add_rows(
+  table_g25, 
+  heights = grobHeight(title_g25),
+  pos = 0)
+
+table_g25 <- gtable_add_grob(
+  table_g25, 
+  title_g25, 
+  1, 1, 1, ncol(table_g25))
+
+############################## N = 100 # errei a ordem
+
+g_ks100 <- cbind(NULL)
+g_ks100 <- (rbind(g_ks100, cbind(sum(ks_gamma_100_500 < 0.05) / simula,
+                               sum(ks_gamma_100_250 < 0.05) / simula,
+                               sum(ks_gamma_100_125 < 0.05) / simula,
+                               sum(ks_gamma_100_100 < 0.05) / simula,
+                               sum(ks_gamma_100_75  < 0.05) / simula,
+                               sum(ks_gamma_100_50  < 0.05) / simula,
+                               sum(ks_gamma_100_25  < 0.05) / simula,
+                               sum(ks_gamma_100_15  < 0.05) / simula,
+                               sum(ks_gamma_100_10  < 0.05) / simula,
+                               sum(ks_gamma_100_5   < 0.05) / simula)))
+
+g_sh100 <- cbind(NULL)
+g_sh100 <- (rbind(g_sh100, cbind(sum(shapiro_gamma_100_500 < 0.05) / simula,
+                               sum(shapiro_gamma_100_250 < 0.05) / simula,
+                               sum(shapiro_gamma_100_125 < 0.05) / simula,
+                               sum(shapiro_gamma_100_100 < 0.05) / simula,
+                               sum(shapiro_gamma_100_75  < 0.05) / simula,
+                               sum(shapiro_gamma_100_50  < 0.05) / simula,
+                               sum(shapiro_gamma_100_25  < 0.05) / simula,
+                               sum(shapiro_gamma_100_15  < 0.05) / simula,
+                               sum(shapiro_gamma_100_10  < 0.05) / simula,
+                               sum(shapiro_gamma_100_5   < 0.05) / simula)))
+
+g_j100 <- cbind(NULL)
+g_j100 <- (rbind(g_j100, cbind(sum(jarque_gamma_100_500 < 0.05) / simula,
+                             sum(jarque_gamma_100_250 < 0.05) / simula,
+                             sum(jarque_gamma_100_125 < 0.05) / simula,
+                             sum(jarque_gamma_100_100 < 0.05) / simula,
+                             sum(jarque_gamma_100_75  < 0.05) / simula,
+                             sum(jarque_gamma_100_50  < 0.05) / simula,
+                             sum(jarque_gamma_100_25  < 0.05) / simula,
+                             sum(jarque_gamma_100_15  < 0.05) / simula,
+                             sum(jarque_gamma_100_10  < 0.05) / simula,
+                             sum(jarque_gamma_100_5   < 0.05) / simula)))
+
+g_d100 <- (cbind(NULL))
+g_d100 <- (rbind(g_d100, cbind(sum(darling_gamma_100_500 < 0.05) / simula,
+                             sum(darling_gamma_100_250 < 0.05) / simula,
+                             sum(darling_gamma_100_125 < 0.05) / simula,
+                             sum(darling_gamma_100_100 < 0.05) / simula,
+                             sum(darling_gamma_100_75  < 0.05) / simula,
+                             sum(darling_gamma_100_50  < 0.05) / simula,
+                             sum(darling_gamma_100_25  < 0.05) / simula,
+                             sum(darling_gamma_100_15  < 0.05) / simula,
+                             sum(darling_gamma_100_10  < 0.05) / simula,
+                             sum(darling_gamma_100_5   < 0.05) / simula)))
+
+dg_t100 <- data.frame(xx = c(g_sh100,
+                            g_ks100,
+                            g_d100,
+                            g_j100),
+                     scala = (alpha),
+                     ggg = factor(rep(1:4, c(10,10,10,10))))
+
+dg_t100$scala <- as.factor(-dg_t100$scala)
+
+plot_g100 <- ggplot(dg_t100, aes(x = scala, y = xx, colour = ggg, group = ggg)) +
+  geom_line(stat = 'identity') +
+  ggtitle(paste('Distribuição Gamma com n = ',n[4]))+
+  labs(y= "Probabilidade de Rejeitar H0", x = "Alpha") + 
+  scale_colour_hue(name = 'Curvas de Poder', labels = c('Shapiro', "KS", 'Darling', "Jarque"))
+
+p <- 1
+g_ks100p <- data.frame(NULL)
+g_sh100p <- data.frame(NULL)
+g_j100p  <- data.frame(NULL)
+g_d100p  <- data.frame(NULL)
+
+while(p <= 10){
+  g_ks100p[p,1] <- paste(round(g_ks100[p], 2)*100,'%')
+  g_sh100p[p,1] <- paste(round(g_sh100[p], 2)*100,'%')
+  g_j100p[p,1] <- paste(round(g_j100[p], 2)*100,'%')
+  g_d100p[p,1] <- paste(round(g_d100[p], 2)*100,'%')
+  
+  colnames(g_ks100p) <- c("KS")
+  colnames(g_sh100p) <-  c('Shapiro')
+  colnames(g_j100p)  <-  c('Jarque')
+  colnames(g_d100p)  <-  c('Darling')
+  p <- p + 1
+}
+
+g_100 <- data.frame(dg_tt2, g_sh100p, g_ks100p, g_d100p, g_j100p)
+title_g100 <- textGrob("Rejeição de H0 - Distribuição Gamma",
+                      gp=gpar(fontsize = 12,
+                              hjust = 20,
+                              vjust = 20))
+
+table_g100 <- tableGrob(g_100)
+table_g100 <- gtable_add_rows(
+  table_g100, 
+  heights = grobHeight(title_g100),
+  pos = 0)
+
+table_g100 <- gtable_add_grob(
+  table_g100, 
+  title_g100, 
+  1, 1, 1, ncol(table_g100))
+
+########################################### N = 50
+
+g_ks50 <- cbind(NULL)
+g_ks50 <- (rbind(g_ks50, cbind(sum(ks_gamma_50_500 < 0.05) / simula,
+                               sum(ks_gamma_50_250 < 0.05) / simula,
+                               sum(ks_gamma_50_125 < 0.05) / simula,
+                               sum(ks_gamma_50_100 < 0.05) / simula,
+                               sum(ks_gamma_50_75  < 0.05) / simula,
+                               sum(ks_gamma_50_50  < 0.05) / simula,
+                               sum(ks_gamma_50_25  < 0.05) / simula,
+                               sum(ks_gamma_50_15  < 0.05) / simula,
+                               sum(ks_gamma_50_10  < 0.05) / simula,
+                               sum(ks_gamma_50_5   < 0.05) / simula)))
+
+g_sh50 <- cbind(NULL)
+g_sh50 <- (rbind(g_sh50, cbind(sum(shapiro_gamma_50_500 < 0.05) / simula,
+                               sum(shapiro_gamma_50_250 < 0.05) / simula,
+                               sum(shapiro_gamma_50_125 < 0.05) / simula,
+                               sum(shapiro_gamma_50_100 < 0.05) / simula,
+                               sum(shapiro_gamma_50_75  < 0.05) / simula,
+                               sum(shapiro_gamma_50_50  < 0.05) / simula,
+                               sum(shapiro_gamma_50_25  < 0.05) / simula,
+                               sum(shapiro_gamma_50_15  < 0.05) / simula,
+                               sum(shapiro_gamma_50_10  < 0.05) / simula,
+                               sum(shapiro_gamma_50_5   < 0.05) / simula)))
+
+g_j50 <- cbind(NULL)
+g_j50 <- (rbind(g_j50, cbind(sum(jarque_gamma_50_500 < 0.05) / simula,
+                             sum(jarque_gamma_50_250 < 0.05) / simula,
+                             sum(jarque_gamma_50_125 < 0.05) / simula,
+                             sum(jarque_gamma_50_100 < 0.05) / simula,
+                             sum(jarque_gamma_50_75  < 0.05) / simula,
+                             sum(jarque_gamma_50_50  < 0.05) / simula,
+                             sum(jarque_gamma_50_25  < 0.05) / simula,
+                             sum(jarque_gamma_50_15  < 0.05) / simula,
+                             sum(jarque_gamma_50_10  < 0.05) / simula,
+                             sum(jarque_gamma_50_5   < 0.05) / simula)))
+
+g_d50 <- (cbind(NULL))
+g_d50 <- (rbind(g_d50, cbind(sum(darling_gamma_50_500 < 0.05) / simula,
+                             sum(darling_gamma_50_250 < 0.05) / simula,
+                             sum(darling_gamma_50_125 < 0.05) / simula,
+                             sum(darling_gamma_50_100 < 0.05) / simula,
+                             sum(darling_gamma_50_75  < 0.05) / simula,
+                             sum(darling_gamma_50_50  < 0.05) / simula,
+                             sum(darling_gamma_50_25  < 0.05) / simula,
+                             sum(darling_gamma_50_15  < 0.05) / simula,
+                             sum(darling_gamma_50_10  < 0.05) / simula,
+                             sum(darling_gamma_50_5   < 0.05) / simula)))
+
+dg_t50 <- data.frame(xx = c(g_sh50,
+                            g_ks50,
+                            g_d50,
+                            g_j50),
+                     scala = (alpha),
+                     ggg = factor(rep(1:4, c(10,10,10,10))))
+
+dg_t50$scala <- as.factor(-dg_t50$scala)
+
+plot_g50 <- ggplot(dg_t50, aes(x = scala, y = xx, colour = ggg, group = ggg)) +
+  geom_line(stat = 'identity') +
+  ggtitle(paste('Distribuição Gamma com n = ',n[3]))+
+  labs(y= "Probabilidade de Rejeitar H0", x = "Alpha") + 
+  scale_colour_hue(name = 'Curvas de Poder', labels = c('Shapiro', "KS", 'Darling', "Jarque"))
+
+p <- 1
+g_ks50p <- data.frame(NULL)
+g_sh50p <- data.frame(NULL)
+g_j50p  <- data.frame(NULL)
+g_d50p  <- data.frame(NULL)
+
+while(p <= 10){
+  g_ks50p[p,1] <- paste(round(g_ks50[p], 2)*100,'%')
+  g_sh50p[p,1] <- paste(round(g_sh50[p], 2)*100,'%')
+  g_j50p[p,1] <- paste(round(g_j50[p], 2)*100,'%')
+  g_d50p[p,1] <- paste(round(g_d50[p], 2)*100,'%')
+  
+  colnames(g_ks50p) <- c("KS")
+  colnames(g_sh50p) <-  c('Shapiro')
+  colnames(g_j50p)  <-  c('Jarque')
+  colnames(g_d50p)  <-  c('Darling')
+  p <- p + 1
+}
+
+g_50 <- data.frame(dg_tt2, g_sh50p, g_ks50p, g_d50p, g_j50p)
+title_g50 <- textGrob("Rejeição de H0 - Distribuição Gamma",
+                      gp=gpar(fontsize = 12,
+                              hjust = 20,
+                              vjust = 20))
+
+table_g50 <- tableGrob(g_50)
+table_g50 <- gtable_add_rows(
+  table_g50, 
+  heights = grobHeight(title_g50),
+  pos = 0)
+
+table_g50 <- gtable_add_grob(
+  table_g50, 
+  title_g50, 
+  1, 1, 1, ncol(table_g50))
+
+############################ N = 200
+
+g_ks200 <- cbind(NULL)
+g_ks200 <- (rbind(g_ks200, cbind(sum(ks_gamma_200_500 < 0.05) / simula,
+                                 sum(ks_gamma_200_250 < 0.05) / simula,
+                                 sum(ks_gamma_200_125 < 0.05) / simula,
+                                 sum(ks_gamma_200_100 < 0.05) / simula,
+                                 sum(ks_gamma_200_75  < 0.05) / simula,
+                                 sum(ks_gamma_200_50  < 0.05) / simula,
+                                 sum(ks_gamma_200_25  < 0.05) / simula,
+                                 sum(ks_gamma_200_15  < 0.05) / simula,
+                                 sum(ks_gamma_200_10  < 0.05) / simula,
+                                 sum(ks_gamma_200_5   < 0.05) / simula)))
+
+g_sh200 <- cbind(NULL)
+g_sh200 <- (rbind(g_sh200, cbind(sum(shapiro_gamma_200_500 < 0.05) / simula,
+                                 sum(shapiro_gamma_200_250 < 0.05) / simula,
+                                 sum(shapiro_gamma_200_125 < 0.05) / simula,
+                                 sum(shapiro_gamma_200_100 < 0.05) / simula,
+                                 sum(shapiro_gamma_200_75  < 0.05) / simula,
+                                 sum(shapiro_gamma_200_50  < 0.05) / simula,
+                                 sum(shapiro_gamma_200_25  < 0.05) / simula,
+                                 sum(shapiro_gamma_200_15  < 0.05) / simula,
+                                 sum(shapiro_gamma_200_10  < 0.05) / simula,
+                                 sum(shapiro_gamma_200_5   < 0.05) / simula)))
+
+g_j200 <- cbind(NULL)
+g_j200 <- (rbind(g_j200, cbind(sum(jarque_gamma_200_500 < 0.05) / simula,
+                               sum(jarque_gamma_200_250 < 0.05) / simula,
+                               sum(jarque_gamma_200_125 < 0.05) / simula,
+                               sum(jarque_gamma_200_100 < 0.05) / simula,
+                               sum(jarque_gamma_200_75  < 0.05) / simula,
+                               sum(jarque_gamma_200_50  < 0.05) / simula,
+                               sum(jarque_gamma_200_25  < 0.05) / simula,
+                               sum(jarque_gamma_200_15  < 0.05) / simula,
+                               sum(jarque_gamma_200_10  < 0.05) / simula,
+                               sum(jarque_gamma_200_5   < 0.05) / simula)))
+
+g_d200 <- (cbind(NULL))
+g_d200 <- (rbind(g_d200, cbind(sum(darling_gamma_200_500 < 0.05) / simula,
+                               sum(darling_gamma_200_250 < 0.05) / simula,
+                               sum(darling_gamma_200_125 < 0.05) / simula,
+                               sum(darling_gamma_200_100 < 0.05) / simula,
+                               sum(darling_gamma_200_75  < 0.05) / simula,
+                               sum(darling_gamma_200_50  < 0.05) / simula,
+                               sum(darling_gamma_200_25  < 0.05) / simula,
+                               sum(darling_gamma_200_15  < 0.05) / simula,
+                               sum(darling_gamma_200_10  < 0.05) / simula,
+                               sum(darling_gamma_200_5   < 0.05) / simula)))
+
+dg_t200 <- data.frame(xx = c(g_sh200,
+                             g_ks200,
+                             g_d200,
+                             g_j200),
+                      scala = (alpha),
+                      ggg = factor(rep(1:4, c(10,10,10,10))))
+
+dg_t200$scala <- as.factor(-dg_t200$scala)
+
+plot_g200 <- ggplot(dg_t200, aes(x = scala, y = xx, colour = ggg, group = ggg)) +
+  geom_line(stat = 'identity') +
+  ggtitle(paste('Distribuição Gamma com n = ',n[5]))+
+  labs(y= "Probabilidade de Rejeitar H0", x = "Alpha") + 
+  scale_colour_hue(name = 'Curvas de Poder', labels = c('Shapiro', "KS", 'Darling', "Jarque"))
+
+p <- 1
+g_ks200p <- data.frame(NULL)
+g_sh200p <- data.frame(NULL)
+g_j200p  <- data.frame(NULL)
+g_d200p  <- data.frame(NULL)
+
+while(p <= 10){
+  g_ks200p[p,1] <- paste(round(g_ks200[p], 2)*100,'%')
+  g_sh200p[p,1] <- paste(round(g_sh200[p], 2)*100,'%')
+  g_j200p[p,1] <- paste(round(g_j200[p], 2)*100,'%')
+  g_d200p[p,1] <- paste(round(g_d200[p], 2)*100,'%')
+  
+  colnames(g_ks200p) <- c("KS")
+  colnames(g_sh200p) <-  c('Shapiro')
+  colnames(g_j200p)  <-  c('Jarque')
+  colnames(g_d200p)  <-  c('Darling')
+  p <- p + 1
+}
+
+g_200 <- data.frame(dg_tt2, g_sh200p, g_ks200p, g_d200p, g_j200p)
+title_g200 <- textGrob("Rejeição de H0 - Distribuição Gamma",
+                       gp=gpar(fontsize = 12,
+                               hjust = 20,
+                               vjust = 20))
+
+table_g200 <- tableGrob(g_200)
+table_g200 <- gtable_add_rows(
+  table_g200, 
+  heights = grobHeight(title_g200),
+  pos = 0)
+
+table_g200 <- gtable_add_grob(
+  table_g200, 
+  title_g200, 
+  1, 1, 1, ncol(table_g200))
+
+```
+
+```{r}
+
+grid.arrange(plot_t25)
+grid.arrange(table_t25)
+
+
+grid.arrange(plot_t50)
+grid.arrange(table_t50)
+
+
+grid.arrange(plot_t100)
+grid.arrange(table_t100)
+
+
+grid.arrange(plot_t200)
+grid.arrange(table_t200)
+
+
+# plots gamma
+grid.arrange(plot_g8)
+grid.arrange(table_g8)
+
+
+grid.arrange(plot_g25)
+grid.arrange(table_g25)
+
+
+grid.arrange(plot_g50)
+grid.arrange(table_g50)
+
+
+grid.arrange(plot_g100)
+grid.arrange(table_g100)
+
+
+grid.arrange(plot_g200)
+grid.arrange(table_g200)
+
+
+```
+
+\newpage
+
+## Conclusão
+
+  Levando em conta as curvas de poder e as tabelas com as taxas de rejeição dos p-valores para cada teste a um nível de significância de 5%, verifica-se que quando o n (tamanho da amostra) é pequeno e mais as distribuições (gamma e t-student) convergirem para uma normal, mais próximo do nível de significância fica a probabilidade de rejeição da normalidade, com exeção do teste de Jarque-Bera uma vez que o tamanho mínimo de amostra dificilmente rejeita a hipótese nula independente de aproximação da normal. O contrário, maiores tamanhos de amostra e falta de normalidade mais acentuada, apresentou rejeições da hipótese nula na maior parte de todas as simulações.
+  
+  Maiores tamanhos de amostra torna os testes mais sensíveis a fuga de normalidade, enfocando o teste de Jarque-Bera que apresentou resultados muito dependentes do tamanho de amostra. O teste Kolmogorov–Smirnov não apresentou muito poder nas simulações, podendo até ser considerado não recomendado para exemplos semelhantes aos apresentados.
+  
+Comparando os testes para distribuição t-student o teste de Shapiro-Wilk divide o posto de melhor teste com o Jarque-Bera, pois o Shapiro-Wilk apresenta melhores resultados para amostras pequenas enquanto o Jarque-Bera sobrevalece para amostras grandes.
+
+  Nenhum teste apresentou bons resultados para a distribuição Gamma quando o tamanho de amostra foi pequeno, no estudo o menor tamanho de amostra não apresentou se quer resultados confiáveis. Porém, quando o tamanho de amostra foi modificado os resultados foram incisivos e o teste Shapiro-Wilk apresentou os melhores resultados independente de qualquer outro fator apresentado.
+  
+  \newpage
+  
+## Referências bibliográficas
+
+Portal Action. Disponível em <http://www.portalaction.com.br/inferencia/64-teste-de-shapiro-wilk>. Acesso em 18 de novembro de 2017.
+
+Portal Action. Disponível em <http://www.portalaction.com.br/inferencia/63-teste-de-anderson-darling>. Acesso em 18 de novembro de 2017.
+
+Portal Action. Disponível em <http://www.portalaction.com.br/inferencia/62-teste-de-kolmogorov-smirnov>. Acesso em 18 de novembro de 2017.
+
+Econometria Basica. Disponível em <https://books.google.com.br/books?id=YxwW4gMGv5AC&pg=PA119&lpg=PA119&dq=jarque+bera+normalidade&source=bl&ots=xtKWeDA58P&sig=jG-mWOGF5XXOEiM1YN67ZoVdP1A&hl=pt-BR&sa=X&ved=0ahUKEwjP1rrIt87XAhXCg5AKHSN-BAw4FBDoAQgmMAA#v=onepage&q=jarque%20bera%20normalidade&f=false>. Acesso em 20 de novembro de 2017.
+
+Statics How to. Disponível em <http://www.statisticshowto.com/jarque-bera-test/>. Acesso em 20 de novembro de 2017
+
+Monte Carlo. Disposnível em <https://www.maxwell.vrac.puc-rio.br/19632/19632_4.PDF>. Acesso em 20 de novembro de 2017.
